@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Modeling Random Access Memory (RAM)</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../../../3700.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Modeling Random Access Memory (RAM)</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#ram-basics">RAM basics</a>
+<ul>
+<li><a href="#memory-terminology">Memory Terminology</a></li>
+<li><a href="#reading-and-writing">Reading and Writing</a></li>
+<li><a href="#buffering">Buffering</a></li>
+</ul></li>
+<li><a href="#assigned-tasks">Assigned Tasks</a>
+<ul>
+<li><a href="#verilog-ram-template">Verilog RAM Template</a></li>
+<li><a href="#simulate-the-ram">Simulate the RAM</a></li>
+<li><a href="#implement-the-design">Implement the Design</a></li>
+<li><a href="#demonstrate-the-design">Demonstrate the Design</a></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="ram-basics">RAM basics</h1>
+<p>Most digital systems use general-purpose data storage known as <strong>Random Access Memory</strong>, or <strong>RAM</strong>. FPGAs typically provide some form of <strong>Block RAM</strong> resources. In Xilinx FPGAs these are organized as configurable memory segments that can be arranged to make memories with different bit-width and storage capacity.</p>
+<h2 id="memory-terminology">Memory Terminology</h2>
+<p>From the vantage point of RTL design, <strong>a RAM is an array</strong>. Each <em>element</em> of the array is called a <strong>word</strong>, and the words all have the same number of bits, called the <strong>bit width <code class="sourceCode verilog">W</code></strong> or <strong>word size</strong>. Common word sizes are 8, 16, 32, or 64 bits.</p>
+<p>The <em>length</em> of the array is called the <strong>depth <code class="sourceCode verilog">D</code></strong>. Usually the depth is a power of 2, e.g. 128 words, or 256, 512, 1024, and so on.</p>
+<p>A particular position in the array is called the <strong>address <code class="sourceCode verilog">a</code></strong>, and the number of address bits is <code class="sourceCode verilog">N &gt;= log2(D)</code>. Usually <code class="sourceCode verilog">N = log2(D)</code>, but sometimes the memory depth is less than the total addressable range.</p>
+<p>At minimum, a RAM needs these I/O ports:</p>
+<ul>
+<li>Address <code class="sourceCode verilog">a</code> (<code class="sourceCode verilog">N</code> bits)</li>
+<li><code class="sourceCode verilog">d_in</code> (<code class="sourceCode verilog">W</code> bits)</li>
+<li><code class="sourceCode verilog">d_out</code> (<code class="sourceCode verilog">W</code> bits)</li>
+<li><code class="sourceCode verilog">rd</code> – read request</li>
+<li><code class="sourceCode verilog">wr</code> – write request</li>
+</ul>
+<p>Most RAMs will also require <code class="sourceCode verilog">clk</code> and <code class="sourceCode verilog">rst_l</code> ports.</p>
+<h2 id="reading-and-writing">Reading and Writing</h2>
+<p>A RAM array supports both READ and WRITE operations:</p>
+<ul>
+<li><strong>READ</strong> operation:
+<ul>
+<li><code class="sourceCode verilog">a</code> is first set to the desired address</li>
+<li><code class="sourceCode verilog">rd</code> goes from 0 to 1</li>
+<li>the RAM puts the corresponding word on <code class="sourceCode verilog">d_out</code></li>
+</ul></li>
+<li><strong>WRITE</strong> operation:
+<ul>
+<li><code class="sourceCode verilog">a</code> is first set to the desired address</li>
+<li><code class="sourceCode verilog">d_in</code> is set to the desired data</li>
+<li><code class="sourceCode verilog">wr</code> goes from 0 to 1</li>
+<li>the RAM saves <code class="sourceCode verilog">d_in</code> to the corresponding address location</li>
+</ul></li>
+</ul>
+<p>An ambiguity occurs when there are simultaneous READ and WRITE events. In this situation, there are two protocols:</p>
+<ul>
+<li><strong>READ-FIRST</strong>: The RAM performs the READ operation and delivers the data to <code class="sourceCode verilog">d_out</code> <em>before</em> overwriting that memory location with <code class="sourceCode verilog">d_in</code>.</li>
+<li><strong>WRITE-FIRST</strong>: The RAM overwrites the memory location with <code class="sourceCode verilog">d_in</code> and simultaneously writes <code class="sourceCode verilog">d_in</code> onto <code class="sourceCode verilog">d_out</code>.</li>
+</ul>
+<p>Many RAM circuits (including the Xilinx Block RAM) can select between these protocols. The distinction can be critical for memory-intensive algorithms, especially in high-speed real-time applications like signal- processing and graphics imaging.</p>
+<h2 id="buffering">Buffering</h2>
+<p>RAMs can utilize a register to buffer the output data. Buffering is important if the RAM lies in the system’s <strong>critical path</strong>, meaning the whole system clock rate is limited by the RAM speed. By using a buffer, the signal propagation delay can be reduced allowing for a faster clock speed.</p>
+<p>The drawback to buffering is that the RAM’s output data is delayed by a full clock cycle. This is called <strong>latency</strong>; the RAM (and the whole system) runs faster <em>on average</em>, but there is an added clock-cycle delay. To visualize latency, suppose we perform 100 consecutive READ operations. The data from the first READ will be delayed by a clock cycle, but after that initial delay the RAM will deliver one word per clock cycle. The initial delay is called <strong>latency</strong>, and the average output rate is called the <strong>throughput</strong>.</p>
+<h1 id="assigned-tasks">Assigned Tasks</h1>
+<p>You will design and implement a READ-FIRST Buffered RAM and demonstrate it using the Basys3 board.</p>
+<h2 id="verilog-ram-template">Verilog RAM Template</h2>
+<p>The Vivado synthesis tool is able to <em>infer</em> a RAM if the module is written in the format shown here:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">module</span> single_port_RAM</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  #(</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>     <span class="dt">parameter</span> DATA_WIDTH=<span class="dv">8</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>     <span class="dt">parameter</span> ADDR_WIDTH=<span class="dv">8</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  (</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>     <span class="dt">input</span> clk,</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>     </span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>     <span class="dt">input</span> rd,</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>     <span class="dt">input</span> wr,</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>     <span class="dt">input</span>      [ADDR_WIDTH<span class="dv">-1</span>:<span class="dv">0</span>] addr,</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>     <span class="dt">input</span>      [DATA_WIDTH<span class="dv">-1</span>:<span class="dv">0</span>] d_in,</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>     <span class="dt">output</span> <span class="dt">reg</span> [DATA_WIDTH<span class="dv">-1</span>:<span class="dv">0</span>] d_out</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>  );</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>  <span class="co">// The Memory array:</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>  <span class="dt">reg</span> [DATA_WIDTH<span class="dv">-1</span>:<span class="dv">0</span>] ram[<span class="dv">2</span>**ADDR_WIDTH<span class="dv">-1</span>:<span class="dv">0</span>];</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>  <span class="kw">always</span> @(<span class="kw">posedge</span> clk) <span class="kw">begin</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>     <span class="kw">if</span> (rd) </span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>       d_out &lt;= ram[addr];</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>     <span class="kw">if</span> (wr)</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>       ram[addr] &lt;= d_in;</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>  <span class="kw">end</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="kw">endmodule</span></span></code></pre></div>
+<p>In this code segment, the bit width <code class="sourceCode verilog">W</code> is declared as <code class="sourceCode verilog"><span class="dt">parameter</span> DATA_WIDTH</code>, and the address bit width <code class="sourceCode verilog">N</code> is declared as <code class="sourceCode verilog"><span class="dt">parameter</span> ADDR_WIDTH</code>. The memory depth <code class="sourceCode verilog">D</code> is <code class="sourceCode verilog"><span class="dv">2</span>^N</code>; in Verilog the exponential operation is a double asterisk, as in <code class="sourceCode verilog"><span class="dv">2</span>**ADDR_WIDTH</code>.</p>
+<p>The RAM itself is represented as a Verilog array:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="dt">reg</span> [DATA_WIDTH<span class="dv">-1</span>:<span class="dv">0</span>] ram[<span class="dv">2</span>**ADDR_WIDTH<span class="dv">-1</span>:<span class="dv">0</span>];</span></code></pre></div>
+<p>This line declares an <strong>array</strong> of <strong>bit vectors</strong>. Each bit vector has width <code class="sourceCode verilog">DATA_WIDTH</code>. There are a total of <code class="sourceCode verilog"><span class="dv">2</span>**ADDR_WIDTH</code> vectors in the array. The individual vectors are addressed using C-style array indexing:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>     d_out &lt;= ram[addr];</span></code></pre></div>
+<p>The above line returns <code class="sourceCode verilog">DATA_WIDTH</code> bits from the memory at the location pointed to by <code class="sourceCode verilog">addr</code>.</p>
+<h2 id="simulate-the-ram">Simulate the RAM</h2>
+<p>Make a Verilog module for the RAM design. Create a testbench to verify the RAM. For every address 0 to 255, do these steps, each in a separate clock cycle:</p>
+<ol type="1">
+<li>Generate a random value for <code class="sourceCode verilog">d_in</code></li>
+<li>WRITE to the memory (<code class="sourceCode verilog">wr &lt;= <span class="dv">1</span></code>, <code class="sourceCode verilog">rd &lt;= <span class="dv">0</span></code>)</li>
+<li>READ from the memory at the same address (<code class="sourceCode verilog">wr &lt;= <span class="dv">0</span></code>, <code class="sourceCode verilog">rd &lt;= <span class="dv">1</span></code>)</li>
+<li>Log the values of <code class="sourceCode verilog">d_in</code> and <code class="sourceCode verilog">d_out</code> (using <code class="sourceCode verilog"><span class="dt">$write</span></code>)</li>
+<li>Generate a new random value for <code class="sourceCode verilog">d_in</code></li>
+<li>Simultaneously READ and WRITE (<code class="sourceCode verilog">wr &lt;= <span class="dv">1</span></code>, <code class="sourceCode verilog">rd &lt;= <span class="dv">1</span></code>)</li>
+<li>Log the values of <code class="sourceCode verilog">d_in</code> and <code class="sourceCode verilog">d_out</code></li>
+<li>Do one more READ operation (<code class="sourceCode verilog">wr &lt;= <span class="dv">0</span></code>, <code class="sourceCode verilog">rd &lt;= <span class="dv">1</span></code>)</li>
+<li>Log <code class="sourceCode verilog">d_in</code> and <code class="sourceCode verilog">d_out</code> again</li>
+</ol>
+<p>You will need to make a state machine for these tests, since the steps unfold across several clock cycles. Note that <code class="sourceCode verilog">wr</code> and <code class="sourceCode verilog">rd</code> should be assigned <code class="sourceCode verilog"><span class="dv">0</span></code> except when performing a WRITE or READ.</p>
+<p>Here is a partial output from my testbench:</p>
+<pre class="text"><code>Address e3
+   1: d_in = 90 d_out = 90  &lt;-- write then read
+   2: d_in = 51 d_out = 90  &lt;-- write/read simultaneous
+   3: d_in = 51 d_out = 51 &lt;-- read
+
+Address e4
+   1: d_in = 69 d_out = 69  &lt;-- write then read
+   2: d_in = 77 d_out = 69  &lt;-- write/read simultaneous
+   3: d_in = 77 d_out = 77 &lt;-- read
+
+Address e5
+   1: d_in = 4a d_out = 4a  &lt;-- write then read
+   2: d_in = d8 d_out = 4a  &lt;-- write/read simultaneous
+   3: d_in = d8 d_out = d8 &lt;-- read</code></pre>
+<p>This output demonstrates that the output data matches the input data, and that the RAM carries out read-before-write when read/write occur simultaneously.</p>
+<h2 id="implement-the-design">Implement the Design</h2>
+<p>Create XDC and <code class="sourceCode verilog">build.tcl</code> files with these mappings:</p>
+<ul>
+<li><code class="sourceCode verilog">addr</code> – the upper eight switches</li>
+<li><code class="sourceCode verilog">d_in</code> – the lower eight switcvhes</li>
+<li><code class="sourceCode verilog">d_out</code> – the lower eight LEDs</li>
+<li><code class="sourceCode verilog">rd</code> – btnU</li>
+<li><code class="sourceCode verilog">wr</code> – btnD</li>
+</ul>
+<p>After synthesis is complete, open the utilization report and note the use of Block RAM (BRAM) resources.</p>
+<h2 id="demonstrate-the-design">Demonstrate the Design</h2>
+<p>Implement the design and demonstrate it on the Basys3 board. Record a short video demonstrating your design. In the video, you should:</p>
+<ul>
+<li>Choose two random addresses and demonstrate WRITE operations</li>
+<li>Demonstrate READ operations to retrieve that data that was stored at the two addresses.</li>
+</ul>
+<p>Upload the video to Canvas.</p>
+<p>Turn in your work using <code class="sourceCode verilog">git</code>:</p>
+<pre class="text"><code>git add case* src/*.v *.v *.rpt *.txt *.tcl *.bit *.xdc
+git commit . -m &quot;Complete&quot;
+git push origin master</code></pre>
+</body>
+</html>

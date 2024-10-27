@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Unsigned Arithmetic</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../../../3700.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Unsigned Arithmetic</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#unsigned-arithmetic-in-verilog">Unsigned Arithmetic in Verilog</a>
+<ul>
+<li><a href="#simple-overflow-application">Simple Overflow Application</a></li>
+<li><a href="#avoiding-overflow">Avoiding Overflow</a></li>
+</ul></li>
+<li><a href="#assigned-tasks">Assigned Tasks</a>
+<ul>
+<li><a href="#create-an-updown-counter">Create an Up/Down Counter</a></li>
+<li><a href="#verify-the-counter-in-simulation">Verify the Counter in Simulation</a></li>
+<li><a href="#implement-and-program">Implement and Program</a></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="unsigned-arithmetic-in-verilog">Unsigned Arithmetic in Verilog</h1>
+<p>Verilog supports several <strong>synthesizable</strong> arithmetic operations, most importantly addition (<code class="sourceCode verilog">a+b</code>) and multiplication (<code class="sourceCode verilog">a*b</code>). By default, a vector is handled as an <strong>unsigned integer</strong>. So for a three-bit vector, the equivalent decimal values are</p>
+<table>
+<thead>
+<tr class="header">
+<th>Binary</th>
+<th>Decimal</th>
+<th>Binary</th>
+<th>Decimal</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>000</td>
+<td>0</td>
+<td>100</td>
+<td>4</td>
+</tr>
+<tr class="even">
+<td>001</td>
+<td>1</td>
+<td>101</td>
+<td>5</td>
+</tr>
+<tr class="odd">
+<td>010</td>
+<td>2</td>
+<td>110</td>
+<td>6</td>
+</tr>
+<tr class="even">
+<td>011</td>
+<td>3</td>
+<td>111</td>
+<td>7</td>
+</tr>
+</tbody>
+</table>
+<p>Now consider a simple adder module:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">module</span> simple_adder</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  (</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">input</span>  [<span class="dv">2</span>:<span class="dv">0</span>] a,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">input</span>  [<span class="dv">2</span>:<span class="dv">0</span>] b,</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">output</span> [<span class="dv">2</span>:<span class="dv">0</span>] q</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  );</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="kw">always</span> @(a,b) <span class="kw">begin</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>     q = a + b;</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="kw">end</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="kw">endmodule</span></span></code></pre></div>
+<p>This module uses a <strong>blocking assignment</strong> to implement a <strong>combinational</strong> (non- clocked) sum. The inputs and output are all 3-bit values. For this module, the <strong>operation table</strong> is</p>
+<table>
+<thead>
+<tr class="header">
+<th>+</th>
+<th>0</th>
+<th>1</th>
+<th>2</th>
+<th>3</th>
+<th>4</th>
+<th>5</th>
+<th>6</th>
+<th>7</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>2</td>
+<td>3</td>
+<td>4</td>
+<td>5</td>
+<td>6</td>
+<td>7</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>1</td>
+<td>2</td>
+<td>3</td>
+<td>4</td>
+<td>5</td>
+<td>6</td>
+<td>7</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>2</td>
+<td>3</td>
+<td>4</td>
+<td>5</td>
+<td>6</td>
+<td>7</td>
+<td>0</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>3</td>
+<td>3</td>
+<td>4</td>
+<td>5</td>
+<td>6</td>
+<td>7</td>
+<td>0</td>
+<td>1</td>
+<td>2</td>
+</tr>
+<tr class="odd">
+<td>4</td>
+<td>4</td>
+<td>5</td>
+<td>6</td>
+<td>7</td>
+<td>0</td>
+<td>1</td>
+<td>2</td>
+<td>3</td>
+</tr>
+<tr class="even">
+<td>5</td>
+<td>5</td>
+<td>6</td>
+<td>7</td>
+<td>0</td>
+<td>1</td>
+<td>2</td>
+<td>3</td>
+<td>4</td>
+</tr>
+<tr class="odd">
+<td>6</td>
+<td>6</td>
+<td>7</td>
+<td>0</td>
+<td>1</td>
+<td>2</td>
+<td>3</td>
+<td>4</td>
+<td>5</td>
+</tr>
+<tr class="even">
+<td>7</td>
+<td>7</td>
+<td>0</td>
+<td>1</td>
+<td>2</td>
+<td>3</td>
+<td>4</td>
+<td>5</td>
+<td>6</td>
+</tr>
+</tbody>
+</table>
+<p>Note that whenever the sum is “too big”, the numbers “roll over” to zero. So 7+1=0, and so on. This is called an <strong>overflow</strong>. In some algorithms, overflow is useful. In others, it’s a bug. Sometimes it creates a hazard for safety or security.</p>
+<p>A similar thing happens with subtraction. The operation table below shows <code class="sourceCode verilog">a-b</code>, with the rows indicating <code class="sourceCode verilog">a</code> and the columns as <code class="sourceCode verilog">b</code>:</p>
+<table>
+<thead>
+<tr class="header">
+<th>-</th>
+<th>0</th>
+<th>1</th>
+<th>2</th>
+<th>3</th>
+<th>4</th>
+<th>5</th>
+<th>6</th>
+<th>7</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>0</td>
+<td>0</td>
+<td>7</td>
+<td>6</td>
+<td>5</td>
+<td>4</td>
+<td>3</td>
+<td>2</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>7</td>
+<td>6</td>
+<td>5</td>
+<td>4</td>
+<td>3</td>
+<td>2</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>2</td>
+<td>1</td>
+<td>0</td>
+<td>7</td>
+<td>6</td>
+<td>5</td>
+<td>4</td>
+<td>3</td>
+</tr>
+<tr class="even">
+<td>3</td>
+<td>3</td>
+<td>2</td>
+<td>1</td>
+<td>0</td>
+<td>7</td>
+<td>6</td>
+<td>5</td>
+<td>4</td>
+</tr>
+<tr class="odd">
+<td>4</td>
+<td>4</td>
+<td>3</td>
+<td>2</td>
+<td>1</td>
+<td>0</td>
+<td>7</td>
+<td>6</td>
+<td>5</td>
+</tr>
+<tr class="even">
+<td>5</td>
+<td>5</td>
+<td>4</td>
+<td>3</td>
+<td>2</td>
+<td>1</td>
+<td>0</td>
+<td>7</td>
+<td>6</td>
+</tr>
+<tr class="odd">
+<td>6</td>
+<td>6</td>
+<td>5</td>
+<td>4</td>
+<td>3</td>
+<td>2</td>
+<td>1</td>
+<td>0</td>
+<td>7</td>
+</tr>
+<tr class="even">
+<td>7</td>
+<td>7</td>
+<td>6</td>
+<td>5</td>
+<td>4</td>
+<td>3</td>
+<td>2</td>
+<td>1</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<h2 id="simple-overflow-application">Simple Overflow Application</h2>
+<p>As a simple useful application, recall the <code class="sourceCode verilog">testbench</code> from our first assignment, where <code class="sourceCode verilog"><span class="kw">if</span>/then</code> statements were used to cycle through all cases of <code class="sourceCode verilog">{en,d}</code>. We later simplified the statements to two assignments, <code class="sourceCode verilog">en &lt;= d; d &lt;= ~en;</code>. This could be made even simpler by using an addition statement:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>   {en,d} &lt;= {en,d}+<span class="dv">1</span>;</span></code></pre></div>
+<p>At each clock cycle, the 2-bit value increments by 1, so the pattern is</p>
+<pre class="text"><code>  00
+  01
+  10
+  11</code></pre>
+<p>When <code class="sourceCode verilog"><span class="dv">11</span></code> is incremented, it overflows and rolls back to zero.</p>
+<h2 id="avoiding-overflow">Avoiding Overflow</h2>
+<p>To avoid overflow problems, there are two approaches:</p>
+<ul>
+<li>Give the output vector a larger width than the inputs</li>
+<li>Detect overflow and provide a separate <strong>overflow error</strong> output</li>
+</ul>
+<p>These options are fairly straightforward when dealing with addition or subtraction: you either increase the output width by 1 bit, or capture the last carry-out as an overflow indicator. For multiplication it is more subtle. Consider multiplying two 3-bit numbers. The <strong>largest product</strong> is 7x7=49=6’b100001, a six-bit number. To multiply two 4-bit numbers, the largest product is 15x15=225=8’b11100001, an eight-bit number.</p>
+<p>As the input width grows, generally the output width needs to be the sum of the input widths. This is a problem for algorithms that perform repeated multiplications, since the bit-width must grow geometrically with each operation.</p>
+<p>A common computing scenario uses the same bit-width for all integers, let’s say 8 bits. Given two 8-bit inputs, a multiplier produces an 8-bit output. <strong>How can the multiplier detect overflow?</strong> See if you can come up with a solution (Hint: consider the most significant non-zero digit in each of the inputs).</p>
+<h1 id="assigned-tasks">Assigned Tasks</h1>
+<h2 id="create-an-updown-counter">Create an Up/Down Counter</h2>
+<p>Make a module called <code class="sourceCode verilog">up_down_counter</code> with behavior specified as follows:</p>
+<ul>
+<li>A <code class="sourceCode verilog">clk</code> input</li>
+<li>Two 8-bit inputs:
+<ul>
+<li><code class="sourceCode verilog">a</code> sets the initial value</li>
+<li><code class="sourceCode verilog">b</code> sets the “step” value</li>
+</ul></li>
+<li>Three single-bit inputs
+<ul>
+<li><code class="sourceCode verilog">up</code> causes the counter to increment by <code class="sourceCode verilog">b</code></li>
+<li><code class="sourceCode verilog">dn</code> causes the counter to decrement by <code class="sourceCode verilog">b</code></li>
+<li><code class="sourceCode verilog">rst</code> forces the count to equal <code class="sourceCode verilog">a</code></li>
+</ul></li>
+<li>One 8-bit output <code class="sourceCode verilog">q</code></li>
+</ul>
+<p>The logic should look something like this:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>  <span class="kw">always</span> @(<span class="kw">posedge</span> clk) <span class="kw">begin</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>     <span class="kw">if</span> (rst)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>        q &lt;= a;</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>     <span class="kw">else</span> <span class="kw">begin</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>        <span class="kw">if</span> (up)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>           q &lt;= q + b;</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>        <span class="kw">else</span> <span class="kw">if</span> (dn)</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>           q &lt;= q - b;</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>     <span class="kw">end</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>  <span class="kw">end</span></span></code></pre></div>
+<p>The logic above seems simple enough, but you need to <strong>modify this logic so that it detects overflow. If an overflow would occur, then <code class="sourceCode verilog">q</code> should not be changed.</strong></p>
+<h2 id="verify-the-counter-in-simulation">Verify the Counter in Simulation</h2>
+<p>Edit the <code class="sourceCode verilog">testbench</code> to test overflow cases, and verify that your module never overflows on <code class="sourceCode verilog">up</code> or <code class="sourceCode verilog">dn</code> events. You will need to choose appropriate test patterns and an algorithm to generate them.</p>
+<h2 id="implement-and-program">Implement and Program</h2>
+<p>Once your module is verified, implement it with these port mappings:</p>
+<ul>
+<li><code class="sourceCode verilog">a</code>: switches 0 through 7</li>
+<li><code class="sourceCode verilog">b</code>: switches 8 through 15</li>
+<li><code class="sourceCode verilog">up</code>: button U</li>
+<li><code class="sourceCode verilog">dn</code>: button D</li>
+<li><code class="sourceCode verilog">rst</code>: button L</li>
+<li><code class="sourceCode verilog">q</code>: LEDs 0 through 7</li>
+</ul>
+<p>Also don’t forget the clock. You will need to make appropriate edits in <code class="sourceCode verilog">build.tcl</code> and <code class="sourceCode verilog">unsigned_arithmetic.xdc</code>.</p>
+<p>Once built, program the board and verify its function. In particular, test these cases and photograph them:</p>
+<ol type="1">
+<li><code class="sourceCode verilog">a=<span class="dv">128</span></code>, <code class="sourceCode verilog">b=<span class="dv">65</span></code>, press <code class="sourceCode verilog">rst</code> then <code class="sourceCode verilog">up</code> until <code class="sourceCode verilog">q</code> stops changing</li>
+<li><code class="sourceCode verilog">a=<span class="dv">17</span></code>, <code class="sourceCode verilog">b=<span class="dv">3</span></code>, press <code class="sourceCode verilog">rst</code> then <code class="sourceCode verilog">dn</code> until <code class="sourceCode verilog">q</code> stops changing</li>
+</ol>
+<p>Save the images as <code class="sourceCode verilog">case1</code> and <code class="sourceCode verilog">case2</code> in your working directory, then submit your work using <code class="sourceCode verilog">git</code>:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> add src case* *.rpt *.txt *.bit</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> commit . -m <span class="st">&quot;Complete&quot;</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> push origin master</span></code></pre></div>
+<p>Then indicate on Canvas that your work is submitted.</p>
+</body>
+</html>

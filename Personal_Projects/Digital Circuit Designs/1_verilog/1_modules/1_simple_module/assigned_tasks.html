@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Basic Modules and Testbenches</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../../../3700.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Basic Modules and Testbenches</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#module-declaration-and-definition">Module Declaration and Definition</a></li>
+<li><a href="#testbenches">Testbenches</a>
+<ul>
+<li><a href="#signal-declarations">Signal Declarations</a></li>
+<li><a href="#instantiate-dut">Instantiate DUT</a></li>
+<li><a href="#initialize-signals-and-variables">Initialize Signals and Variables</a>
+<ul>
+<li><a href="#about-blocking-assignments">About Blocking Assignments (=)</a></li>
+</ul></li>
+<li><a href="#generate-a-clock">Generate a Clock</a></li>
+<li><a href="#define-stopping-conditions">Define Stopping Conditions</a></li>
+<li><a href="#generate-input-patterns-stimuli">Generate Input Patterns (Stimuli)</a>
+<ul>
+<li><a href="#about-non-blocking-assignments">About Non-Blocking Assignments</a></li>
+</ul></li>
+<li><a href="#print-data-to-console">Print Data to Console</a>
+<ul>
+<li><a href="#writing-to-a-text-file">Writing to a Text File</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#assigned-tasks">Assigned Tasks</a></li>
+</ul>
+</nav>
+<h2 id="module-declaration-and-definition">Module Declaration and Definition</h2>
+<p>A very simple module is defined in the file named <code class="sourceCode verilog">src/simple_module.v</code>. Use a text editor to open the file and examine its structure. First notice the <strong>timescale</strong> directive:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ot">`timescale 1ns/1ps</span></span></code></pre></div>
+<p>Every Verilog file should begin with a `<code class="sourceCode verilog">timescale</code> line, usually <code class="sourceCode verilog">1ns/1ps</code>.</p>
+<p>Next comes the module declaration. A <code class="sourceCode verilog"><span class="kw">module</span></code> is declared by the <code class="sourceCode verilog"><span class="kw">module</span></code> keyword, followed by a list of <strong>Input/Output Ports</strong>, then the <strong>module definition</strong>:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">module</span> simple_module </span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>(</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>   <span class="co">/* I/O Port List Goes Here */</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>);</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>   <span class="co">// Module Definition Here</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="kw">endmodule</span></span></code></pre></div>
+<p>As with traditional programming languages, a <strong>declaration</strong> specifies how the module is accessed “from the outside,” i.e.  how to interface with the module. A <strong>definition</strong> provides the actual structure or behavior of the module.</p>
+<p>We will come back to the details of <code class="sourceCode verilog">simple_module</code> after taking a detour to examine the <strong>testbench</strong> template.</p>
+<h1 id="testbenches">Testbenches</h1>
+<p>Best practice dictates that designers should <strong>verify</strong> every module in a design as exhaustively as possible. Therefore, for any module you design, it’s a good idea to specify a testbench just for that module. An example testbench is provided in the file named <code class="sourceCode verilog">src/testbench.v</code>.</p>
+<p>The testbench contains several key sections, as itemized below.</p>
+<h2 id="signal-declarations">Signal Declarations</h2>
+<p>The testbench is a module with no I/O ports. In order to test the <code class="sourceCode verilog">simple_module</code>, its I/O signals need to be declared inside the testbench. We can start by copying the port declarations from <code class="sourceCode verilog">simple_module</code>, and edit the lines:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>   <span class="dt">input</span>      clk,  <span class="co">// &lt;-- &quot;input&quot; becomes &quot;reg&quot;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>   <span class="dt">input</span>      en,   <span class="co">// &lt;-- &#39;,&#39; becomes &#39;;&#39;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>   <span class="dt">input</span>      d,</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>   <span class="dt">output</span> <span class="dt">reg</span> q     <span class="co">// &lt;-- &quot;output reg&quot; becomes &quot;wire&quot;</span></span></code></pre></div>
+<p>The purpose of a <code class="sourceCode verilog">testbench</code> is to generate input patterns for <code class="sourceCode verilog">simple_module</code> and evaluate output patterns. To achieve this, all the <strong>inputs</strong> to <code class="sourceCode verilog">simple_module</code> are declared as <code class="sourceCode verilog"><span class="dt">reg</span></code> signals within the <code class="sourceCode verilog">testbench</code>, so they can be given assignments in <code class="sourceCode verilog"><span class="kw">always</span></code> blocks. The <strong>outputs</strong> from <code class="sourceCode verilog">simple_module</code> are not assigned values by <code class="sourceCode verilog">testbench</code>, so the should be declared <code class="sourceCode verilog"><span class="dt">wire</span></code> type within <code class="sourceCode verilog">testbench</code>.</p>
+<p>With these changes, the <code class="sourceCode verilog">testbench</code> <code class="sourceCode verilog"><span class="kw">module</span></code> and signal declarations are as follows:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">module</span> testbench ();</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>   <span class="co">// DECLARE SIGNALS</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>   <span class="dt">reg</span> clk; <span class="co">// &quot;reg&quot; type signals are  controlled</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>   <span class="dt">reg</span> en;  <span class="co">// by the testbench</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>   <span class="dt">reg</span> d;</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>   <span class="dt">wire</span> q;  <span class="co">// &quot;wire&quot; type signals are controlled</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>            <span class="co">// by the module being tested</span></span></code></pre></div>
+<h2 id="instantiate-dut">Instantiate DUT</h2>
+<p>Following the signal declarations, we see the <strong>Device Under Test (DUT)</strong>. This is an instance of the module we are testing.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>   <span class="co">// INSTANTIATE the DEVICE UNDER </span><span class="al">TEST</span><span class="co"> (DUT)</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>   simple_module DUT(</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>              .clk(clk),</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>              .en(en),</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>              .d(d),</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>              .q(q)</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>             );</span></code></pre></div>
+<h2 id="initialize-signals-and-variables">Initialize Signals and Variables</h2>
+<p>Following the instantiation are <strong>initializations</strong> which occur in an <code class="sourceCode verilog"><span class="kw">initial</span></code> block:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>   <span class="co">// INITIAL SIGNAL CONFIGURATION:</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>   <span class="kw">initial</span> <span class="kw">begin</span>  <span class="co">// BLOCKING ASSIGNMENTS!</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>      clk = <span class="dv">0</span>;      </span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>      en  = <span class="dv">0</span>;</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>      d   = <span class="dv">0</span>;      </span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>   <span class="kw">end</span></span></code></pre></div>
+<h3 id="about-blocking-assignments">About Blocking Assignments (=)</h3>
+<p>The initial block uses <strong>blocking assignments (=)</strong>, which behave exactly like assignments in a traditional programming language. So, if the initial block contains these lines:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>   en = <span class="dv">0</span>;</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>   d  = ~en;</span></code></pre></div>
+<p>then <code class="sourceCode verilog">d</code> should equal 1, because the <code class="sourceCode verilog">en</code> assignment was evalued prior to the <code class="sourceCode verilog">d</code> assignment.</p>
+<h2 id="generate-a-clock">Generate a Clock</h2>
+<p>Next the testbench generates a master clock for the simulation:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>   <span class="co">// GENERATE CLOCK:</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>   <span class="kw">initial</span> <span class="kw">forever</span> <span class="bn">#10</span> clk = ~clk;</span></code></pre></div>
+<p>In this line, <code class="sourceCode verilog"><span class="kw">initial</span></code> means “evaluate prior to starting the simulation,” <code class="sourceCode verilog"><span class="kw">forever</span></code> means “keep evaluating indefinitely,” and <code class="sourceCode verilog"><span class="bn">#10</span></code> means “delay for 10 time units.” The “time units” are set by the `<code class="sourceCode verilog">timescale</code> directive, usually the time unit is 1ns, so <code class="sourceCode verilog"><span class="bn">#10</span></code> means 10ns.</p>
+<h2 id="define-stopping-conditions">Define Stopping Conditions</h2>
+<p>Next, we need to create a <strong>clock counter</strong> and define a <strong>stopping condition</strong> to tell the simulator when to finish. The code below instructs the simulator to count each clock cycle, and stop when the count reaches 8:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>   <span class="co">// DEFINE WHEN TO TERMINATE SIMULATION:</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>   <span class="dt">integer</span> clk_count = <span class="dv">0</span>;   </span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>   <span class="kw">always</span> @(<span class="kw">posedge</span> clk) <span class="kw">begin</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>      clk_count &lt;= clk_count + <span class="dv">1</span>;</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>      <span class="kw">if</span> (clk_count == <span class="dv">8</span>)</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>         <span class="dt">$finish</span>;</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>      </span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>   <span class="kw">end</span></span></code></pre></div>
+<h2 id="generate-input-patterns-stimuli">Generate Input Patterns (Stimuli)</h2>
+<p>Next, perhaps most importantly, the <code class="sourceCode verilog">testbench</code> creates <strong>stimuli</strong> for the DUT. An <strong>exhaustive test</strong> creates all possible input patterns in order to verify every state of the DUT. In this example, the DUT has two inputs, <code class="sourceCode verilog">en</code> and <code class="sourceCode verilog">d</code>. That makes four possible patterns. The testbench uses <code class="sourceCode verilog"><span class="kw">if</span>/<span class="kw">else</span> <span class="kw">if</span></code> statements to cycle through them:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>   <span class="co">// CREATE STIMULI:</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>   <span class="kw">always</span> @(<span class="kw">posedge</span> clk) <span class="kw">begin</span> </span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>      </span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>      <span class="co">// A simple state machine that cycles through</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>      <span class="co">// all input values:</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>      <span class="kw">if</span> ({en,d} == <span class="bn">2&#39;b00</span>)   <span class="co">// {en,d} CONCATENATES en,d into</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>         {en,d} &lt;= <span class="bn">2&#39;b01</span>;    <span class="co">// a 2-bit vector</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>      <span class="kw">else</span> <span class="kw">if</span> ({en,d} == <span class="bn">2&#39;b01</span>)</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>         {en,d} &lt;= <span class="bn">2&#39;b10</span>;</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>      <span class="kw">else</span> <span class="kw">if</span> ({en,d} == <span class="bn">2&#39;b10</span>)</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>         {en,d} &lt;= <span class="bn">2&#39;b11</span>;</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>      <span class="kw">else</span> <span class="kw">if</span> ({en,d} == <span class="bn">2&#39;b11</span>)</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>        {en,d} &lt;= <span class="bn">2&#39;b00</span>;</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>   <span class="kw">end</span></span></code></pre></div>
+<p>Let’s break down the syntax. This section of code starts with an <code class="sourceCode verilog"><span class="kw">always</span></code> declaration:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">always</span> @(<span class="kw">posedge</span> clk) <span class="kw">begin</span></span></code></pre></div>
+<p>Here the <strong>sensitivity list</strong> is <code class="sourceCode verilog">@(<span class="kw">posedge</span> clk)</code>, which directs the simulator to evaluate the block upon every <strong>rising edge</strong> of <code class="sourceCode verilog">clk</code>. This is the usual method for defining <strong>synchronous clocked logic</strong>.</p>
+<p>Next, we have the first <code class="sourceCode verilog"><span class="kw">if</span></code> condition:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>      <span class="kw">if</span> ({en,d} == <span class="bn">2&#39;b00</span>)  <span class="co">// {en,d} CONCATENATES en,d into</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>         {en,d} &lt;= <span class="bn">2&#39;b01</span>;    <span class="co">// a 2-bit vector</span></span></code></pre></div>
+<p>There are two important things happening here:<br />
+1. The <strong>concatenation operator</strong> <code class="sourceCode verilog">{en,d}</code> joins <code class="sourceCode verilog">en</code> and <code class="sourceCode verilog">d</code> into a single two-bit vector. 2. <strong>Non-blocking assignments (&lt;=)</strong> are used to indicate register assignments.</p>
+<p>Within an <code class="sourceCode verilog"><span class="kw">always</span></code> block, all non-blocking assignments are <strong>evaluated concurrently</strong> – they happen in parallel. The results of non-blocking assignments take effect <em>at the next clock edge</em>, in the future. So there is a one-cycle delay.</p>
+<h3 id="about-non-blocking-assignments">About Non-Blocking Assignments</h3>
+<p>To better understand non-blocking assignments, consider this code snippet:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">initial</span> <span class="kw">begin</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>   en = <span class="dv">0</span>;</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>   d  = <span class="dv">0</span>;</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="kw">always</span> @(<span class="kw">posedge</span> clk) <span class="kw">begin</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>   en &lt;= d;</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>   d  &lt;= ~en;</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code></pre></div>
+<p>In this code, <code class="sourceCode verilog">en</code> and <code class="sourceCode verilog">d</code> are both 0 at the very start of simulation. At the time of the <em>first clock edge</em>, their values are not yet changed. The statement <code class="sourceCode verilog">en &lt;= d</code> takes effect just prior to the <em>second clock edge</em>. Therefore in the last statement, <code class="sourceCode verilog">d &lt;= ~en</code>, the value of <code class="sourceCode verilog">en</code> is still 0 at the time of evaluation. So <code class="sourceCode verilog">d</code> is assigned to be 1, which takes effect just before the <em>next</em> clock edge.</p>
+<p>Over time, the pattern will be</p>
+<pre class="text"><code>         en  d
+initial: 0   0
+clock 1: 0   0
+clock 2: 0   1
+clock 3: 1   1
+clock 4: 1   0
+clock 5: 0   0</code></pre>
+<p>Notice that this logic cycles through all four input patterns, and is more compact than the <code class="sourceCode verilog"><span class="kw">for</span>/<span class="kw">else</span></code> conditions.</p>
+<h2 id="print-data-to-console">Print Data to Console</h2>
+<p>In order to verify the simulation results, you need to print information to the console or to a file. In this example, we use the <code class="sourceCode verilog"><span class="dt">$write</span></code> system task, which is nearly identical to C’s <code class="sourceCode verilog">printf</code> statement:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>   <span class="co">// WRITE OUTPUT TO CONSOLE:</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>   <span class="kw">always</span> @(<span class="kw">posedge</span> clk) <span class="kw">begin</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>      <span class="dt">$write</span>(<span class="st">&quot;clk: %d&quot;</span>,clk_count);      </span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>      <span class="dt">$write</span>(<span class="st">&quot;</span><span class="ch">\t</span><span class="st">en: %b&quot;</span>, en);</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>      <span class="dt">$write</span>(<span class="st">&quot;</span><span class="ch">\t</span><span class="st">d: %b&quot;</span>, d);</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>      <span class="dt">$write</span>(<span class="st">&quot;</span><span class="ch">\t</span><span class="st">q: %b&quot;</span>, q);</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>      <span class="dt">$write</span>(<span class="st">&quot;</span><span class="ch">\n</span><span class="st">&quot;</span>);      </span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>   <span class="kw">end</span></span></code></pre></div>
+<h3 id="writing-to-a-text-file">Writing to a Text File</h3>
+<p>The <code class="sourceCode verilog"><span class="dt">$write</span></code> task prints text to the simulation console. To write to a text file, a similar task called <code class="sourceCode verilog"><span class="dt">$fwrite</span></code> is used like this:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="dt">integer</span> fid;                         <span class="co">// declare file reference</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="kw">initial</span> fid = $fopen(<span class="st">&quot;filename&quot;</span>,<span class="st">&quot;w&quot;</span>); <span class="co">// Open the file for writing </span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="kw">always</span> @(<span class="kw">posedge</span> clk) <span class="kw">begin</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>   <span class="co">//...//</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>   <span class="dt">$fwrite</span>(fid,<span class="st">&quot;clk: %d&quot;</span>, clk_count);</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>   <span class="co">//...and so on...//</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code></pre></div>
+<h1 id="assigned-tasks">Assigned Tasks</h1>
+<p>In the terminal, run a simulation by typing “make” and press return. Verify the outputs:</p>
+<pre class="text"><code>clk:           0        en: 0   d: 0    q: x
+clk:           1        en: 0   d: 1    q: 0
+clk:           2        en: 1   d: 0    q: 0
+clk:           3        en: 1   d: 1    q: 0
+clk:           4        en: 0   d: 0    q: 1
+clk:           5        en: 0   d: 1    q: 0
+clk:           6        en: 1   d: 0    q: 0
+clk:           7        en: 1   d: 1    q: 0</code></pre>
+<p>Make the following changes:</p>
+<ul>
+<li>Modify simple_module
+<ul>
+<li>Give <code class="sourceCode verilog">q</code> an initial value of zero</li>
+<li>Change the output so that <code class="sourceCode verilog">q</code> is assigned to be the XOR of <code class="sourceCode verilog">q</code> with <code class="sourceCode verilog">d</code></li>
+</ul></li>
+<li>Modify the testbench
+<ul>
+<li>Copy the <code class="sourceCode verilog"><span class="dt">$write</span></code> statements to make <code class="sourceCode verilog"><span class="dt">$fwrite</span></code>s, with filename “test_result.txt”</li>
+<li>Comment the <code class="sourceCode verilog"><span class="kw">if</span>/<span class="kw">else</span></code> conditions and replace them with the logic <code class="sourceCode verilog">en &lt;= d; d &lt;= ~en;</code></li>
+<li>Terminate the simulation at 10 clock cycles instead of 8.</li>
+</ul></li>
+</ul>
+<p>Run the simulation again. Open “test_result.txt” and verify that the output is correct. Your testbench should cover all four input patterns, and <code class="sourceCode verilog">q</code> should toggle each time <code class="sourceCode verilog">d</code> is 1.</p>
+<p>To turn in your work, run these commands:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> add test_result.txt</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> commit . -m <span class="st">&quot;Complete.&quot;</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> push origin master</span></code></pre></div>
+<p>Then indicate on Canvas that your work is done.</p>
+</body>
+</html>

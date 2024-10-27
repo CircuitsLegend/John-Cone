@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>UART Terminal Communication: Transmit Side</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../../../3700.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">UART Terminal Communication: Transmit Side</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#introduction">Introduction</a></li>
+<li><a href="#assigned-tasks">Assigned Tasks</a>
+<ul>
+<li><a href="#design-uart_rx">Design <code class="sourceCode verilog">uart_rx</code></a>
+<ul>
+<li><a href="#state-machine">State Machine</a></li>
+<li><a href="#clock-divider-with-synchronization">Clock Divider with Synchronization</a></li>
+<li><a href="#simulate-uart_rx">Simulate <code class="sourceCode verilog">uart_rx</code></a></li>
+</ul></li>
+<li><a href="#design-a-top-module">Design a <code class="sourceCode verilog">top</code> module</a>
+<ul>
+<li><a href="#use-debouncers-for-handshaking">Use debouncers for handshaking</a></li>
+<li><a href="#testbench-simulation">Testbench simulation</a></li>
+</ul></li>
+<li><a href="#implement-and-test-the-design">Implement and Test the Design</a></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="introduction">Introduction</h1>
+<p>Now that you’ve completed a UART transmitter, in this lab you will design a UART receiver, implement and test it alongside your transmitter, similar to what was done in the <code class="sourceCode verilog">serial_interface</code> and <code class="sourceCode verilog">SPI_WRITE</code> assignments.</p>
+<p>As a reminder, the UART specs for this lab are:</p>
+<ul>
+<li>9600 <strong>baud</strong></li>
+<li>8 bits per word</li>
+<li>1 stop bit</li>
+</ul>
+<h1 id="assigned-tasks">Assigned Tasks</h1>
+<h2 id="design-uart_rx">Design <code class="sourceCode verilog">uart_rx</code></h2>
+<p>Design a UART receiver module with these I/O ports:</p>
+<pre class="text"><code>        clk    // system clock
+        rst_l  // active-low reset
+
+        rx     // UART serial data input
+    
+        d_in   // received data (8 bits)
+    
+        ready   // &quot;data is ready&quot; handshake signal  
+        ack     // &quot;data acknowledged&quot; handshake signal</code></pre>
+<h3 id="state-machine">State Machine</h3>
+<p>The UART RX module is very similar to the TX design, except the flow of information is reversed. Use the TX state machine as a starting point, and design a modified state machine to produce the receiver’s behavior. Note that this is very similar to what was done in previous assignments.</p>
+<p>For handshaking on the application side, use a procedure similar to the <code class="sourceCode verilog">S2P</code> module from the <code class="sourceCode verilog">serial_interface</code> assignment. Include handshaking signals in your state machine.</p>
+<p><strong>Scan an image of your state transition diagram and add/commit it to the repository.</strong></p>
+<p>Program your state machine in the <code class="sourceCode verilog">uart_rx</code> module.</p>
+<h3 id="clock-divider-with-synchronization">Clock Divider with Synchronization</h3>
+<p>The UART RX is very similar to the SPI RX, with one important difference: <strong>since the UART channel has no clock, you should initialize the UART clock divider so that it has a rising edge immediately when the transmission begins</strong>.</p>
+<p>To support this timing synchronization requirement, modify the clock divider. Supposing your divider has a UART clock named <code class="sourceCode verilog">div_clk</code> with a counter named <code class="sourceCode verilog">div_count</code>, you should modify the logic as follows:</p>
+<ul>
+<li>If the state machine is in the <code class="sourceCode verilog">WAIT</code> state and <code class="sourceCode verilog">rx</code> is <code class="sourceCode verilog"><span class="dv">1</span></code>, hold both <code class="sourceCode verilog">div_clk</code> and <code class="sourceCode verilog">div_count</code> at <code class="sourceCode verilog"><span class="dv">0</span></code>. (In other words, the 9600Hz UART clock is stalled until the start bit occurs).</li>
+<li>If the state machine is in the <code class="sourceCode verilog">WAIT</code> state and <code class="sourceCode verilog">rx</code> is <code class="sourceCode verilog"><span class="dv">0</span></code> and <code class="sourceCode verilog">div_count</code> is <code class="sourceCode verilog"><span class="dv">0</span></code>, then toggle <code class="sourceCode verilog">div_clk</code> to <code class="sourceCode verilog"><span class="dv">1</span></code> and increment <code class="sourceCode verilog">div_count</code>.</li>
+<li>Otherwise (i.e. <code class="sourceCode verilog"><span class="kw">else</span></code>) the divider acts normally: if <code class="sourceCode verilog">div_count &gt;= N</code> then toggle <code class="sourceCode verilog">div_clk</code> and reset <code class="sourceCode verilog">div_count</code>; else increment <code class="sourceCode verilog">div_count</code>.</li>
+</ul>
+<h4 id="example-solution">Example solution</h4>
+<p>One approach is to use a <code class="sourceCode verilog">clock_divider</code> submodule with a <code class="sourceCode verilog">sync</code> input. Whenever <code class="sourceCode verilog">sync</code> goes high, it forces the clock divider output to zero. When <code class="sourceCode verilog">sync</code> goes low again, the clock divider resets its phase with a rising edge a short delay after <code class="sourceCode verilog">sync</code> event. In the example below, the delay is set to 1000 cycles of the main system clock. The purpose of this delay is to let the <code class="sourceCode verilog">rx</code> signal settle to a stable value before reading its value.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">module</span> clock_divider</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  #(</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">parameter</span> N=<span class="dv">5208</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>   (</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="dt">input</span>      clk,</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">input</span>      rst_l,</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">input</span>      sync,</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    <span class="dt">output</span> <span class="dt">reg</span> div_clk</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    );</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>   <span class="dt">integer</span>     clk_count;</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>   <span class="kw">initial</span> <span class="kw">begin</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>      div_clk   = <span class="dv">0</span>;</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>      clk_count = <span class="dv">0</span>;</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>   <span class="kw">end</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>   <span class="kw">always</span> @(<span class="kw">posedge</span> clk, <span class="kw">negedge</span> rst_l) <span class="kw">begin</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>      <span class="kw">if</span> (!rst_l) <span class="kw">begin</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>        div_clk   &lt;= <span class="dv">0</span>;</span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>        clk_count &lt;= <span class="dv">0</span>;       </span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>      <span class="kw">end</span></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>      <span class="kw">else</span> <span class="kw">begin</span></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>        <span class="co">//---- sync behavior -----------------//</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>        <span class="kw">if</span> (sync) <span class="kw">begin</span></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>           div_clk   &lt;= <span class="dv">0</span>;        <span class="co">// set div_clk low </span></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>           clk_count &lt;= N<span class="dv">-1000</span>;   <span class="co">// delay 1000 cycles before rising edge</span></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>        <span class="kw">end</span></span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>        <span class="co">//---- normal clock divider below ----//</span></span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a>        <span class="kw">else</span> <span class="kw">if</span> (clk_count == N) <span class="kw">begin</span></span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a>           div_clk   &lt;= ~div_clk;</span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a>           clk_count &lt;= <span class="dv">0</span>;          </span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a>        <span class="kw">end</span></span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a>        <span class="kw">else</span> <span class="kw">begin</span></span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a>           clk_count &lt;= clk_count + <span class="dv">1</span>;          </span>
+<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a>        <span class="kw">end</span></span>
+<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a>        <span class="co">//-------------------------------------//</span></span>
+<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a>      <span class="kw">end</span></span>
+<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a>   <span class="kw">end</span></span>
+<span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a><span class="kw">endmodule</span> <span class="co">// clock_divider</span></span></code></pre></div>
+<h3 id="simulate-uart_rx">Simulate <code class="sourceCode verilog">uart_rx</code></h3>
+<p>Modify the testbench from <code class="sourceCode verilog">uart_tx</code> so that it sends a transmission. Declare the necessary <code class="sourceCode verilog"><span class="dt">wire</span></code> and <code class="sourceCode verilog"><span class="dt">reg</span></code> signals that correspond to the <code class="sourceCode verilog">uart_rx</code> ports. Remove or comment out unused signals from the <code class="sourceCode verilog">tx</code> module.</p>
+<p>The section to focus on is this one:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>      rx    = <span class="dv">1</span>;         <span class="co">// &lt;--- add this line to initialize rx in the idle mode</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>      ack   = <span class="dv">0</span>;         <span class="co">// &lt;--- add this line to initialize handshake</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>      </span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>      <span class="bn">#1000</span> send = <span class="dv">1</span>;    <span class="co">// &lt;--- remove this line</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>      <span class="kw">while</span> (<span class="dv">1</span>) <span class="kw">begin</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>      </span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>         d_out = <span class="dt">$random</span>(); <span class="co">// &lt;--- add this line to set data to send</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>                            </span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>         <span class="co">// Wait for a signal:               // &lt;--- remove</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>         <span class="kw">while</span> (tx) <span class="kw">begin</span>                    <span class="co">//      all</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>            <span class="co">// Delay 10us between checks     //      of</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>           <span class="bn">#10000</span>;                           <span class="co">//      these</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>         <span class="kw">end</span>                                 <span class="co">//      lines</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>         <span class="dt">$write</span>(<span class="st">&quot;Sending %x</span><span class="ch">\n</span><span class="st">&quot;</span>,d_out);        <span class="co">// &lt;-- add this</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>         <span class="dt">$fwrite</span>(fid,<span class="st">&quot;Sending %x</span><span class="ch">\n</span><span class="st">&quot;</span>,d_out);   <span class="co">// &lt;-- and this</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>         <span class="dt">$write</span>(<span class="st">&quot;Start bit. TX=&quot;</span>);       <span class="co">// &lt;--- change &quot;TX&quot; to &quot;RX&quot;</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>         <span class="dt">$fwrite</span>(fid,<span class="st">&quot;Start bit. TX=&quot;</span>); </span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>         rx=<span class="dv">0</span>;   <span class="co">// &lt;--- add this line to send START BIT</span></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>         <span class="co">// SEND eight bits:</span></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>         <span class="kw">for</span> (i=<span class="dv">0</span>; i&lt;<span class="dv">8</span>; i=i+<span class="dv">1</span>) <span class="kw">begin</span></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>            <span class="bn">#104170</span>;</span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>            d_in[i] = tx;          <span class="co">// &lt;-- Change to rx = d_out[i]</span></span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>            <span class="dt">$write</span>(<span class="st">&quot;%b&quot;</span>,tx);       <span class="co">// &lt;-- tx to rx</span></span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>            <span class="dt">$fwrite</span>(fid,<span class="st">&quot;%b&quot;</span>,tx);  <span class="co">// &lt;-- ditto</span></span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>         <span class="kw">end</span></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>         <span class="co">// Wait for stop bit:</span></span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>         <span class="bn">#104170</span>;</span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>         </span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>         <span class="kw">if</span> (tx) <span class="kw">begin</span>               <span class="co">// &lt;-- remove the `if` line</span></span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>            <span class="dt">$write</span>(<span class="st">&quot;. Stop bit. &quot;</span>);</span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>            <span class="dt">$fwrite</span>(fid,<span class="st">&quot;. Stop bit. &quot;</span>);</span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>         <span class="kw">end</span>                                   <span class="co">// &lt;-- remove</span></span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>         <span class="kw">else</span> <span class="kw">begin</span>                            <span class="co">// &lt;-- remove</span></span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>            <span class="dt">$write</span>(<span class="st">&quot;. BAD STOP BIT. &quot;</span>);        <span class="co">// &lt;-- remove</span></span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>            <span class="dt">$fwrite</span>(fid,<span class="st">&quot;. BAD STOP BIT. &quot;</span>);   <span class="co">// &lt;-- remove</span></span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a>         <span class="kw">end</span>                                   <span class="co">// &lt;-- remove</span></span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>         <span class="co">// Add these lines:</span></span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a>         <span class="kw">while</span> (!ready) <span class="kw">begin</span></span>
+<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a>            <span class="bn">#104170</span>;  <span class="co">// wait for &#39;ready&#39; signal</span></span>
+<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a>         <span class="kw">end</span></span>
+<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a>         ack = <span class="dv">1</span>;</span>
+<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a>       </span>
+<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a>         <span class="co">// Keep these lines:</span></span>
+<span id="cb3-52"><a href="#cb3-52" aria-hidden="true" tabindex="-1"></a>         <span class="dt">$write</span>(<span class="st">&quot;Got %xh(&#39;%c&#39;)</span><span class="ch">\n</span><span class="st">&quot;</span>,d_in,d_in);</span>
+<span id="cb3-53"><a href="#cb3-53" aria-hidden="true" tabindex="-1"></a>         <span class="dt">$fwrite</span>(fid,<span class="st">&quot;Got %xh (&#39;%c&#39;)</span><span class="ch">\n</span><span class="st">&quot;</span>,d_in,d_in);</span>
+<span id="cb3-54"><a href="#cb3-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-55"><a href="#cb3-55" aria-hidden="true" tabindex="-1"></a>         <span class="co">// Add these lines to test handshake:</span></span>
+<span id="cb3-56"><a href="#cb3-56" aria-hidden="true" tabindex="-1"></a>         <span class="kw">while</span> (ready) <span class="kw">begin</span></span>
+<span id="cb3-57"><a href="#cb3-57" aria-hidden="true" tabindex="-1"></a>            <span class="bn">#104170</span>;  <span class="co">// wait for &#39;ready&#39; signal to drop</span></span>
+<span id="cb3-58"><a href="#cb3-58" aria-hidden="true" tabindex="-1"></a>         <span class="kw">end</span></span>
+<span id="cb3-59"><a href="#cb3-59" aria-hidden="true" tabindex="-1"></a>         ack = <span class="dv">0</span>;    <span class="co">// clear ack</span></span>
+<span id="cb3-60"><a href="#cb3-60" aria-hidden="true" tabindex="-1"></a>       </span>
+<span id="cb3-61"><a href="#cb3-61" aria-hidden="true" tabindex="-1"></a>         <span class="bn">#104170</span>;  <span class="co">// wait one more UART clock cycle before sending again</span></span>
+<span id="cb3-62"><a href="#cb3-62" aria-hidden="true" tabindex="-1"></a>     </span>
+<span id="cb3-63"><a href="#cb3-63" aria-hidden="true" tabindex="-1"></a>         tx_count = tx_count + <span class="dv">1</span>;       </span>
+<span id="cb3-64"><a href="#cb3-64" aria-hidden="true" tabindex="-1"></a>      <span class="kw">end</span></span></code></pre></div>
+<p>Complete your testbench, run the simulation and verify that your module receives the same data that was transmitted.</p>
+<h2 id="design-a-top-module">Design a <code class="sourceCode verilog">top</code> module</h2>
+<p>Create a <code class="sourceCode verilog">top</code> module based on the <code class="sourceCode verilog">SPI_WRITE</code> assignment. Instead of the <code class="sourceCode verilog">SPI</code> modules, place one instance of <code class="sourceCode verilog">uart_tx</code> and one instance of <code class="sourceCode verilog">uart_rx</code>, and connect the <code class="sourceCode verilog">tx</code> port from one to the <code class="sourceCode verilog">rx</code> port of the other. The <code class="sourceCode verilog">uart_tx</code> module will send data from the switches, and <code class="sourceCode verilog">uart_rx</code> will write data to the LEDs.</p>
+<h3 id="use-debouncers-for-handshaking">Use debouncers for handshaking</h3>
+<p>Use buttons for the <code class="sourceCode verilog">start</code> and <code class="sourceCode verilog">ack</code> signals. Use modified debouncers to implement the handshaking protocols.</p>
+<h3 id="testbench-simulation">Testbench simulation</h3>
+<p>Create a new testbench based on the <code class="sourceCode verilog">SPI_WRITE</code> assignment to test your <code class="sourceCode verilog">top</code> module. Don’t delete the other testbench that you made; instead, name this one <code class="sourceCode verilog">top_testbench</code> and <strong>edit the Makefile</strong> by adding these lines:</p>
+<pre class="text"><code>top: compile elaborate_top simulate
+
+elaborate_top: compile 
+      xelab -debug typical -s sim top_testbench
+</code></pre>
+<p><strong>Important note: there should be a TAB prior to the <code class="sourceCode verilog">xelab</code> command, not spaces.</strong></p>
+<p>Then run your simulation using the command <code class="sourceCode verilog">make top</code>.</p>
+<h2 id="implement-and-test-the-design">Implement and Test the Design</h2>
+<p>Create <code class="sourceCode verilog">build.tcl</code> and XDC files for your <code class="sourceCode verilog">top</code> module, implement it and program onto the Basys3 board.</p>
+<p>After the design is debugged and verified to work properly, record a short video showing your design work and post the video to Canvas.</p>
+<p>Turn in your work using <code class="sourceCode verilog">git</code>:</p>
+<pre class="text"><code>git add src/*.v *.v *.rpt *.txt *.tcl *.bit *.xdc
+git commit . -m &quot;Complete&quot;
+git push origin master</code></pre>
+</body>
+</html>

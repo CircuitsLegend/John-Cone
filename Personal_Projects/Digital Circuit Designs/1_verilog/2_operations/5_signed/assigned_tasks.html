@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Signed Arithmetic</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../../../3700.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Signed Arithmetic</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#signed-integers-in-verilog">Signed Integers in Verilog</a>
+<ul>
+<li><a href="#exercise-4-bit-2s-comp-negation-table">Exercise: 4-bit 2’s Comp Negation Table</a></li>
+<li><a href="#exercise-3-bit-2s-comp-addition-table">Exercise: 3-bit 2’s Comp Addition Table</a></li>
+<li><a href="#exercise-2s-comp-overflow">Exercise: 2’s Comp Overflow</a></li>
+</ul></li>
+<li><a href="#sign-extension">Sign Extension</a>
+<ul>
+<li><a href="#exercise-signed-assignments">Exercise: <code class="sourceCode verilog"><span class="dt">signed</span></code> assignments</a></li>
+</ul></li>
+<li><a href="#assigned-tasks">Assigned Tasks</a></li>
+</ul>
+</nav>
+<h1 id="signed-integers-in-verilog">Signed Integers in Verilog</h1>
+<p>A bit vector can be declared <code class="sourceCode verilog"><span class="dt">signed</span></code> in Verilog, so it is interpreted as an integer in <strong>2’s Complement Format</strong>. The table below shows all 3-bit binary vectors and the corresponding 2’s complement interpretation:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Binary (2’s Comp)</th>
+<th>Decimal</th>
+<th>Binary (2’s Comp)</th>
+<th>Decimal</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>000</td>
+<td>0</td>
+<td>111</td>
+<td>-1</td>
+</tr>
+<tr class="even">
+<td>001</td>
+<td>1</td>
+<td>110</td>
+<td>-2</td>
+</tr>
+<tr class="odd">
+<td>010</td>
+<td>2</td>
+<td>101</td>
+<td>-3</td>
+</tr>
+<tr class="even">
+<td>011</td>
+<td>3</td>
+<td>100</td>
+<td>NA</td>
+</tr>
+</tbody>
+</table>
+<p>The value <code class="sourceCode verilog"><span class="dv">100</span></code> is <strong>Not Allowed (NA)</strong>.</p>
+<p>The syntax for declaring a <code class="sourceCode verilog"><span class="dt">signed</span></code> 3-bit integer <code class="sourceCode verilog">a</code> is:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>   <span class="dt">reg</span> <span class="dt">signed</span>  [<span class="dv">2</span>:<span class="dv">0</span>]  a;</span></code></pre></div>
+<p>In 2’s Complement, a <strong>negative number</strong> <code class="sourceCode verilog">-N</code> is obtained from a <strong>positive number</strong> <code class="sourceCode verilog">N</code> by two steps:</p>
+<ol type="1">
+<li>Flip all bits of <code class="sourceCode verilog">N</code></li>
+<li>Add 1 to <code class="sourceCode verilog">~N</code> using normal addition, discarding the final carry</li>
+</ol>
+<p>In Verilog syntax, these steps are expressed as <code class="sourceCode verilog">~N+<span class="dv">1</span></code> or just <code class="sourceCode verilog">-N</code>.</p>
+<h2 id="exercise-4-bit-2s-comp-negation-table">Exercise: 4-bit 2’s Comp Negation Table</h2>
+<p>Complete the negative values in the table below.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Pos Dec</th>
+<th>Pos Bin <code class="sourceCode verilog">N</code></th>
+<th>Inv Bin <code class="sourceCode verilog">~N</code></th>
+<th>Neg Bin</th>
+<th>Neg Dec</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>0</td>
+<td>0000</td>
+<td>1111</td>
+<td>0000</td>
+<td>-0</td>
+</tr>
+<tr class="even">
+<td>+1</td>
+<td>0001</td>
+<td>1110</td>
+<td>1111</td>
+<td>-1</td>
+</tr>
+<tr class="odd">
+<td>+2</td>
+<td>0010</td>
+<td>1101</td>
+<td>1110</td>
+<td>-2</td>
+</tr>
+<tr class="even">
+<td>+3</td>
+<td>0011</td>
+<td></td>
+<td></td>
+<td>-3</td>
+</tr>
+<tr class="odd">
+<td>+4</td>
+<td>0100</td>
+<td></td>
+<td></td>
+<td>-4</td>
+</tr>
+<tr class="even">
+<td>+5</td>
+<td>0101</td>
+<td></td>
+<td></td>
+<td>-5</td>
+</tr>
+<tr class="odd">
+<td>+6</td>
+<td>0110</td>
+<td></td>
+<td></td>
+<td>-6</td>
+</tr>
+<tr class="even">
+<td>+7</td>
+<td>0111</td>
+<td></td>
+<td></td>
+<td>-7</td>
+</tr>
+</tbody>
+</table>
+<h2 id="exercise-3-bit-2s-comp-addition-table">Exercise: 3-bit 2’s Comp Addition Table</h2>
+<p>Complete the binary addition table below. For each entry, write the binary result and, in parentheses, the decimal interpretation. Do the addition using <strong>binary arithmetic</strong>, and indicate <strong>overflow</strong> cases with an exclamation point (!).</p>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th>101 (-3)</th>
+<th>110 (-2)</th>
+<th>111 (-1)</th>
+<th>000 (0)</th>
+<th>001 (1)</th>
+<th>010 (2)</th>
+<th>011 (3)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>101 (-3)</td>
+<td>010 (2)!</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="even">
+<td>110 (-2)</td>
+<td>011 (3)!</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>111 (-1)</td>
+<td>100 (NA)!</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="even">
+<td>000 (0)</td>
+<td>101 (-3)</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>001 (1)</td>
+<td>110 (-2)</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="even">
+<td>010 (2)</td>
+<td>111 (-1)</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>011 (3)</td>
+<td>000 (1)</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h2 id="exercise-2s-comp-overflow">Exercise: 2’s Comp Overflow</h2>
+<p>Study the results from the 3-bit addition table. Is there an efficient way to detect overflow cases? Give a precise logic solution that detects all overflow events.</p>
+<h1 id="sign-extension">Sign Extension</h1>
+<p>Sometimes we need to do operations on vectors of <strong>different bit width</strong>. Consider the snippet:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="dt">reg</span> [<span class="dv">2</span>:<span class="dv">0</span>] a;</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="dt">reg</span> [<span class="dv">3</span>:<span class="dv">0</span>] b;</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="kw">always</span> @(a) <span class="kw">begin</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>   b = a;</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code></pre></div>
+<p>This case is implemented in <code class="sourceCode verilog">src/testbench.v</code>. Open the file and study its contents. Run <code class="sourceCode verilog">make</code> to perform the simulation. In the output, notice that <code class="sourceCode verilog">a</code> is copied into <code class="sourceCode verilog">b</code> as a <strong>positive number</strong>. For example, <code class="sourceCode verilog">a=<span class="dv">101</span></code> yields <code class="sourceCode verilog">b=<span class="dv">0101</span></code>.</p>
+<p>But what if <code class="sourceCode verilog">a</code> is a <strong>signed value</strong>? In that case <code class="sourceCode verilog">a=<span class="dv">101</span></code> corresponds to a decimal value of -3. Try modifying the declaration of <code class="sourceCode verilog">a</code>:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="dt">reg</span> <span class="dt">signed</span> [<span class="dv">2</span>:<span class="dv">0</span>] a;</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="dt">reg</span>        [<span class="dv">3</span>:<span class="dv">0</span>] b;</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="kw">always</span> @(a) <span class="kw">begin</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>   b = a;</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code></pre></div>
+<p>With this change, when <code class="sourceCode verilog">a=<span class="dv">101</span></code> (-3), <code class="sourceCode verilog">b</code> is <strong>sign extended</strong> to be the same width as ‘b’, resulting in <code class="sourceCode verilog"><span class="dv">1101</span></code> (-3). This creates a <strong>bug potential</strong> since <code class="sourceCode verilog">b</code> is not <code class="sourceCode verilog"><span class="dt">signed</span></code>, so its value will be interpreted as +13.</p>
+<p>Consider this modification:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="dt">reg</span> <span class="dt">signed</span> [<span class="dv">2</span>:<span class="dv">0</span>] a;</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="dt">reg</span>        [<span class="dv">3</span>:<span class="dv">0</span>] b;</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="dt">reg</span>        [<span class="dv">4</span>:<span class="dv">0</span>] c;</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="kw">always</span> @(a) <span class="kw">begin</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>   b = a;</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>   c = b;</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code></pre></div>
+<p>In this chain of assignments, when <code class="sourceCode verilog">a=<span class="dv">101</span></code>, it is sign-extended so that <code class="sourceCode verilog">b=<span class="dv">1101</span></code>, but since <code class="sourceCode verilog">b</code> is unsigned it is <strong>zero extended</strong> to <code class="sourceCode verilog"><span class="dv">01101</span></code>, resulting in <code class="sourceCode verilog">c=<span class="dv">01101</span></code> (+13).</p>
+<p>To avoid this bug, the <strong>best practice is to declare all vectors as signed if they could receive signed assignments</strong>.</p>
+<h2 id="exercise-signed-assignments">Exercise: <code class="sourceCode verilog"><span class="dt">signed</span></code> assignments</h2>
+<p>Modify <code class="sourceCode verilog">src/testbench.v</code> by adding the <code class="sourceCode verilog"><span class="dt">signed</span></code> keyword to vectors <code class="sourceCode verilog">b</code> and <code class="sourceCode verilog">c</code>. Repeat the simulation and verify that the assignments are correctly sign-extended.</p>
+<h1 id="assigned-tasks">Assigned Tasks</h1>
+<p>Modify your up/down counter so that it uses <strong>signed operations</strong>. Copy your module and testbench code into <code class="sourceCode verilog">src</code>. Also copy your <code class="sourceCode verilog">build.tcl</code> and XDC files into your working directory. Add them to your repository using <code class="sourceCode verilog">git add</code>. Edit them to support signed operation and <strong>detect signed overflow</strong>.</p>
+<p>Your testbench should cover all overflow cases and log results in <code class="sourceCode verilog">test_results.txt</code>. Verify your signed counter in simulation, then implement it on the Basys3 board and demonstrate the following cases:</p>
+<ol type="1">
+<li><code class="sourceCode verilog">a=<span class="dv">53</span></code>, <code class="sourceCode verilog">b=<span class="dv">13</span></code>, press <code class="sourceCode verilog">rst</code> then <code class="sourceCode verilog">up</code> until <code class="sourceCode verilog">q</code> stops changing</li>
+<li><code class="sourceCode verilog">a=-<span class="dv">17</span></code>, <code class="sourceCode verilog">b=<span class="dv">37</span></code>, press <code class="sourceCode verilog">rst</code> then <code class="sourceCode verilog">dn</code> until <code class="sourceCode verilog">q</code> stops changing</li>
+<li><code class="sourceCode verilog">a=<span class="dv">29</span></code>, <code class="sourceCode verilog">b=-<span class="dv">17</span></code>, press <code class="sourceCode verilog">rst</code> then <code class="sourceCode verilog">up</code> until <code class="sourceCode verilog">q</code> stops changing</li>
+<li><code class="sourceCode verilog">a=-<span class="dv">47</span></code>, <code class="sourceCode verilog">b=-<span class="dv">43</span></code>, press <code class="sourceCode verilog">rst</code> then <code class="sourceCode verilog">dn</code> until <code class="sourceCode verilog">q</code> stops changing</li>
+</ol>
+<p>Photograph the results and save the photos as <code class="sourceCode verilog">case1</code>, <code class="sourceCode verilog">case2</code>, etc with an appropriate graphics extension. Then turn in your results using <code class="sourceCode verilog">git</code>:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> add *.txt *.bit *.rpt src/*.v *.xdc *.tcl case*</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> commit . -m <span class="st">&quot;Complete&quot;</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> push origin master</span></code></pre></div>
+<p>Indicate on Canvas that your work is done.</p>
+</body>
+</html>

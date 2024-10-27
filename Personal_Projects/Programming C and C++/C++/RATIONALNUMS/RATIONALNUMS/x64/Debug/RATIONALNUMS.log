@@ -1,0 +1,4 @@
+﻿  rational.cpp
+C:\Users\jmc13\OneDrive\Documents\School\Programming\RATIONALNUMS\RATIONALNUMS\rational.cpp(86,14): warning C4101: 'gcf': unreferenced local variable
+C:\Users\jmc13\OneDrive\Documents\School\Programming\RATIONALNUMS\RATIONALNUMS\rational.cpp(74): warning C4715: 'Rational::set': not all control paths return a value
+  RATIONALNUMS.vcxproj -> C:\Users\jmc13\OneDrive\Documents\School\Programming\RATIONALNUMS\x64\Debug\RATIONALNUMS.exe

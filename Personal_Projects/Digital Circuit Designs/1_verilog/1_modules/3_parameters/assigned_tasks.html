@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>parameter in Verilog Modules</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../../../3700.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title"><code class="sourceCode verilog"><span class="dt">parameter</span></code> in Verilog Modules</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#parameters-in-a-simple-adder">Parameters in a Simple Adder</a>
+<ul>
+<li><a href="#what-are-parameters">What are parameters?</a></li>
+</ul></li>
+<li><a href="#assigned-tasks">Assigned Tasks</a>
+<ul>
+<li><a href="#complete-the-top-design">Complete the <code class="sourceCode verilog">top</code> design</a></li>
+<li><a href="#simulate-the-design">Simulate the design</a></li>
+<li><a href="#implement-the-design">Implement the Design</a></li>
+<li><a href="#program-and-test-the-design">Program and test the design</a></li>
+<li><a href="#turn-in-your-work">Turn in your work</a></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="parameters-in-a-simple-adder">Parameters in a Simple Adder</h1>
+<p>In this assignment, you will complete a design that adds four 4-bit numbers in an <strong>adder tree</strong> configuration:</p>
+<pre class="text"><code>sum = (a+b) + (c+d)</code></pre>
+<p>To compute this sum, we need <strong>three additions</strong>. Each addition is performed by a module named <code class="sourceCode verilog">simple_adder</code>.</p>
+<p>Open the file <code class="sourceCode verilog">simple_adder.v</code> and examine it line-by-line. In the module declaration, a <strong>parameter</strong> is declared:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">module</span> simple_adder </span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  #(                  <span class="co">// Use #( ) to declare parameters before I/O signals</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">parameter</span> W=<span class="dv">2</span>     <span class="co">// `parameter` keyword, name `W`, default value 2</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    )</span></code></pre></div>
+<p>The parameter <code class="sourceCode verilog">W</code> sets the bit-width of the inputs. The default width is set at 2; we will need to <strong>override</strong> the default value when instantiating the design.</p>
+<h2 id="what-are-parameters">What are parameters?</h2>
+<p>A parameter is fundamentally different from a signal or variable. In essence, the parameter allows us to modify the module design on a per-instance basis. To see why we need parameters in this design, consider the bit-width of a sum:</p>
+<ul>
+<li><code class="sourceCode verilog">a</code> has 4 bits</li>
+<li><code class="sourceCode verilog">b</code> has 4 bits</li>
+<li><code class="sourceCode verilog">a+b</code> has <strong>5 bits</strong></li>
+</ul>
+<p>We have to allow an extra bit for the carry overflow. For instance, if <code class="sourceCode verilog">a=<span class="dv">12</span></code> and <code class="sourceCode verilog">b=<span class="dv">7</span></code>, then the sum is <code class="sourceCode verilog">a+b=<span class="dv">19</span></code>, which has binary value <code class="sourceCode verilog"><span class="dv">11001</span></code>. So we need 5 bits for the sum <code class="sourceCode verilog">(a+b)</code>.</p>
+<p>Similarly, we need 5 bits for the sum <code class="sourceCode verilog">(c+d)</code>. For the next addition, we need to change <code class="sourceCode verilog">W</code> to <strong>5 bits</strong> in order to add <code class="sourceCode verilog">(a+b)</code> with <code class="sourceCode verilog">(c+d)</code>, and the final <code class="sourceCode verilog">sum</code> output has <strong>6 bits</strong>. To accomodate the changing bit- width, we could design separate 4-bit and 5-bit adder modules, but it is much more efficient to create a single <strong>parameterized module</strong>.</p>
+<p>In the file <code class="sourceCode verilog">src/top.v</code>, notice how the modules are instantiated:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>   simple_adder #(.W(<span class="dv">4</span>)) SA1</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>     (</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>      .clk(clk),</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>      .a(a),</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>      .b(b),</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>      .sum(a_plus_b)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>      );</span></code></pre></div>
+<p>The <code class="sourceCode verilog">W</code> parameter for instance SA1 is specified by the syntax <code class="sourceCode verilog">#(.W(<span class="dv">4</span>))</code>. Without this specification, <code class="sourceCode verilog">W</code> would default to 2. Using this syntax, we can customize the bit-width for every single instance of <code class="sourceCode verilog">simple_adder</code>.</p>
+<h1 id="assigned-tasks">Assigned Tasks</h1>
+<h2 id="complete-the-top-design">Complete the <code class="sourceCode verilog">top</code> design</h2>
+<p>Open the file <code class="sourceCode verilog">src/top.v</code> and examine the instance definitions for <code class="sourceCode verilog">SA1</code> and <code class="sourceCode verilog">SA2</code>. Notice the syntax for overriding the <code class="sourceCode verilog">W</code> parameter. Then complete the instance definition for <code class="sourceCode verilog">SA3</code>.</p>
+<h2 id="simulate-the-design">Simulate the design</h2>
+<p>Next, open the file <code class="sourceCode verilog">src/testbench.v</code> and note how it has been changed from the previous assignments. We have four 4-bit <code class="sourceCode verilog"><span class="dt">reg</span></code> signals:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>   <span class="dt">reg</span> [<span class="dv">3</span>:<span class="dv">0</span>] a;  <span class="co">// by the testbench</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>   <span class="dt">reg</span> [<span class="dv">3</span>:<span class="dv">0</span>] b;</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>   <span class="dt">reg</span> [<span class="dv">3</span>:<span class="dv">0</span>] c;</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>   <span class="dt">reg</span> [<span class="dv">3</span>:<span class="dv">0</span>] d;</span></code></pre></div>
+<p>To test <strong>all combinations</strong> of these inputs, we would need to run 2^16 test patterns, which amounts to 65,536 unique cases. In our previous testbench, we coded each test case individually – you probably don’t want to individually code over 65k <code class="sourceCode verilog"><span class="kw">else</span> <span class="kw">if</span></code> cases. Also, we probably don’t need to verify every single case exhaustively. An alternative method is <strong>random pattern testing</strong>, which is employed in the new testbench:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>   <span class="co">// CREATE STIMULI:</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>   <span class="kw">always</span> @(<span class="kw">posedge</span> clk) <span class="kw">begin</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>      a &lt;= <span class="dt">$random</span>();</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>      b &lt;= <span class="dt">$random</span>();</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>      c &lt;= <span class="dt">$random</span>();</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>      d &lt;= <span class="dt">$random</span>();</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>   <span class="kw">end</span></span></code></pre></div>
+<p>Here the <code class="sourceCode verilog"><span class="dt">$random</span>()</code> function is used to generate test cases. This is a very useful and common strategy for verifying complex prototypes. Be warned, however, that <strong>$random is not a synthesizable function.</strong> You can use it in testbenches but not in physical designs.</p>
+<p>Also notice that both <code class="sourceCode verilog"><span class="dt">$write</span></code> and <code class="sourceCode verilog"><span class="dt">$fwrite</span></code> lines are used, so the test results will be printed to the console and also written to a text file.</p>
+<p>Run <code class="sourceCode verilog">make</code> to simulate your design. The first few output lines should look like this:</p>
+<pre class="text"><code>clk:             0  a:    0(0000)   b:    0(0000)   c:    0(0000)   d:    0(0000)   sum:  x(xxxxxx)
+clk:             1  a:    4(0100)   b:    1(0001)   c:    9(1001)   d:    3(0011)   sum:  x(xxxxxx)
+clk:             2  a:   13(1101)   b:   13(1101)   c:    5(0101)   d:    2(0010)   sum:  0(000000)
+clk:             3  a:    1(0001)   b:   13(1101)   c:    6(0110)   d:   13(1101)   sum: 17(010001)
+clk:             4  a:   13(1101)   b:   12(1100)   c:    9(1001)   d:    6(0110)   sum: 33(100001)</code></pre>
+<p>Notice the two-cycle delay. Initially, the <code class="sourceCode verilog">sum</code> output is undefined, so it shows as <code class="sourceCode verilog">x</code>. After two cycles, the initially zero <code class="sourceCode verilog">a,b,c,d</code> values propagate to the <code class="sourceCode verilog">sum</code> output, which is zero (as expected). In cycle 3, we see the sum of <code class="sourceCode verilog">a,b,c,d</code> values from cycle 1: <code class="sourceCode verilog"><span class="dv">4</span> + <span class="dv">1</span> + <span class="dv">9</span> + <span class="dv">3</span> = <span class="dv">17</span></code>, and so on.</p>
+<h2 id="implement-the-design">Implement the Design</h2>
+<p>Open the file <code class="sourceCode verilog">simple_adder.xdc</code> and observe that the <code class="sourceCode verilog">a</code>, <code class="sourceCode verilog">b</code>, <code class="sourceCode verilog">c</code>, and <code class="sourceCode verilog">d</code> inputs are mapped to the sliding switches in groups of 4. The <code class="sourceCode verilog">sum</code> output is mapped to the lower 6 LEDs.</p>
+<p>Next, open the file <code class="sourceCode verilog">build.tcl</code> and notice differences compared to the previous assignments. The <code class="sourceCode verilog">read_xdc</code> command now points to <code class="sourceCode verilog">simple_adder.xdc</code>, and the <code class="sourceCode verilog">synth_design</code> command now declares <code class="sourceCode verilog">top</code> as the top-module name:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode tcl"><code class="sourceCode tcl"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>synth_design<span class="ot"> -top</span> top<span class="ot"> -part</span> xc7a35tcpg236<span class="dv">-1</span></span></code></pre></div>
+<p>The bitstream is also renamed to <code class="sourceCode verilog">simple_adder.bit</code>:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode tcl"><code class="sourceCode tcl"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>write_bitstream<span class="ot"> -force</span> simple_adder.bit</span></code></pre></div>
+<p>Type <code class="sourceCode verilog">make implement</code> to run the implementation. After it completes, open the timing and utilization report files. Verify that the WNS is positive, and take note of the value. In the utilization file, note that the adder logic is implemented entirely with slice LUTs, no DSP modules are used.</p>
+<h2 id="program-and-test-the-design">Program and test the design</h2>
+<p>Now use the Vivado Hardware Manager to program your design onto the Basys3 board. Test the three cases listed below, and take photos of each case. Place the photos in the same directory as the bitstream, and name them <code class="sourceCode verilog">case1.jpg</code>, <code class="sourceCode verilog">case2.jpg</code>, and <code class="sourceCode verilog">case3.jpg</code> (a different image type, like .png, is acceptable).</p>
+<p>Cases to test:</p>
+<ol type="1">
+<li>1 + 2 + 3 + 4 = 10</li>
+<li>3 + 5 + 7 + 11 = 26</li>
+<li>15 + 15 + 15 + 15 = 60</li>
+</ol>
+<h2 id="turn-in-your-work">Turn in your work</h2>
+<p>To turn in your work, run these commands:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> add test_result.txt post_synth.v *.rpt</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> add case*</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> add *.bit</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> commit . -m <span class="st">&quot;Completed&quot;</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> push origin master</span></code></pre></div>
+<p>Then indicate on Canvas that your work is done.</p>
+</body>
+</html>

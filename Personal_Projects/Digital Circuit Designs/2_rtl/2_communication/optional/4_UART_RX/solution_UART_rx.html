@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>In-Depth: UART RX Demo with Human Interface</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../../../3700.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">In-Depth: UART RX Demo with Human Interface</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#testbench-design">Testbench Design</a>
+<ul>
+<li><a href="#the-button_pusher-test-module">The <code class="sourceCode verilog">button_pusher</code> Test Module</a></li>
+<li><a href="#getting-more-information-from-the-modules">Getting More Information from the Modules</a></li>
+<li><a href="#clock-divider-sync-process">Clock Divider <code class="sourceCode verilog">sync</code> Process</a></li>
+<li><a href="#adjust-clock-divider-period">Adjust Clock Divider Period</a></li>
+<li><a href="#testbench-organization">Testbench Organization</a></li>
+</ul></li>
+</ul>
+</nav>
+<p>Our top-level design task is to create an internal UART link, consisting of a TX module and an RX module, to transmit data from the Basys3 switches and display the data on the LEDs. The user provides handshaking by pressing buttons. <code class="sourceCode verilog">BtnU</code> initiates the <strong>start</strong> signal, and BtnL gives the <strong>acknowledge</strong> or <code class="sourceCode verilog">ack</code> to complete the transaction and update the LEDs.</p>
+<p>A block diagram is shown below.</p>
+<figure>
+<img src="figures/top_block_diagram.png" alt="Schematic for top module." /><figcaption aria-hidden="true">Schematic for <code class="sourceCode verilog">top</code> module.</figcaption>
+</figure>
+<p>Here are some of the main features:</p>
+<ul>
+<li>The <code class="sourceCode verilog">UART_TX</code> module’s <code class="sourceCode verilog">tx</code> output is connected to the <code class="sourceCode verilog">rx</code> input of the <code class="sourceCode verilog">UART_RX</code> module.</li>
+<li>Handshaking debouncers are used to interface with the <code class="sourceCode verilog">start</code> and <code class="sourceCode verilog">ack</code> buttons.</li>
+<li>The <code class="sourceCode verilog">ready</code> signal is inverted to clear the <code class="sourceCode verilog">ack</code> debouncer, so the handshake sequence is:
+<ul>
+<li>Data received on <code class="sourceCode verilog">rx</code></li>
+<li><code class="sourceCode verilog">ready</code> goes HIGH</li>
+<li>User presses <code class="sourceCode verilog">ack</code> button</li>
+<li><code class="sourceCode verilog">ready</code> goes LOW and debouncer is cleared (reset).</li>
+</ul></li>
+<li><code class="sourceCode verilog">done</code> and <code class="sourceCode verilog">ack</code> are displayed on the higher LEDs. Output data is displayed on the lower LEDs.</li>
+<li>Some simple control logic provides LED behavior:
+<ul>
+<li>When <code class="sourceCode verilog">ack</code> is HIGH, <code class="sourceCode verilog">d_out</code> is written onto the lower LEDs.</li>
+</ul></li>
+</ul>
+<h1 id="testbench-design">Testbench Design</h1>
+<h2 id="the-button_pusher-test-module">The <code class="sourceCode verilog">button_pusher</code> Test Module</h2>
+<p>Since this design requires a human user to press the <code class="sourceCode verilog">start</code> and <code class="sourceCode verilog">ack</code> buttons, the testbench should account for the random timing of button-push events, and should also simulate “bounce” events associated with button pushing. To this end, a <code class="sourceCode verilog">button_pusher</code> module is provided in the <code class="sourceCode verilog">demos<span class="op">/</span></code> directory. The <code class="sourceCode verilog">button_pusher</code> simulates the random pressing of buttons.</p>
+<p>The <code class="sourceCode verilog">button_pusher</code> interface is:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">module</span> button_pusher #<span class="op">(</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>               <span class="dt">parameter</span> Nbtn<span class="op">=</span><span class="dv">5</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>               <span class="op">)</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>   <span class="op">(</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">input</span>      clk<span class="op">,</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="dt">output</span> <span class="dt">reg</span> <span class="op">[</span>Nbtn<span class="dv">-1</span><span class="op">:</span><span class="dv">0</span><span class="op">]</span> btn</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">);</span></span></code></pre></div>
+<p>The <code class="sourceCode verilog">button_pusher</code> module uses a parameter, <code class="sourceCode verilog">Nbtn</code>, to specify the number of buttons used in the design (default is all five buttons). The module’s output is a vector indicating which buttons are pressed. If a button is pressed, the corresponding bit of <code class="sourceCode verilog">btn</code> is <code class="sourceCode verilog"><span class="dv">1</span></code>, otherwise the bit is <code class="sourceCode verilog"><span class="dv">0</span></code>. The simulated user pushes one button at a time. Button presses and releases occur at random. Buttons may bounce (toggle briefly between <code class="sourceCode verilog"><span class="dv">1</span></code> and <code class="sourceCode verilog"><span class="dv">0</span></code>) when changing between pressed and released states.</p>
+<p>When running the <code class="sourceCode verilog">test_button_pusher.v</code> simulation (also in <code class="sourceCode verilog">demos<span class="op">/</span></code>) you see a log of button events like this:</p>
+<pre class="text"><code>btn  2 ON
+(bounce)
+btn  2 ON
+       2652: btn = 00100
+(bounce)
+       2654: btn = 00000
+btn  2 ON
+       2655: btn = 00100
+btn  2 OFF
+       3272: btn = 00000
+(bounce)
+       3273: btn = 00100
+       3274: btn = 00000
+(bounce)
+       3278: btn = 00100
+(bounce)
+       3280: btn = 00000
+(bounce)
+       3281: btn = 00100
+(bounce)
+(bounce)
+       3284: btn = 00000
+(bounce)
+       3289: btn = 00100
+       3290: btn = 00000
+(bounce)
+       3291: btn = 00100
+       3292: btn = 00000
+btn  4 ON
+       5252: btn = 10000
+(bounce)
+       5254: btn = 00000</code></pre>
+<p>The indented lines show the clock count and the value of <code class="sourceCode verilog">btn</code>. There are short intervals between bounce events, and long intervals between ON/OFF events.</p>
+<h2 id="getting-more-information-from-the-modules">Getting More Information from the Modules</h2>
+<p>Debugging a system design can be difficult, since problems can be hidden down multiple layers of hierarchy. One way to improve design transparency is to insert <code class="sourceCode verilog"><span class="dt">$display</span></code> or <code class="sourceCode verilog"><span class="dt">$write</span></code> statements within your <code class="sourceCode verilog">UART_TX</code> and <code class="sourceCode verilog">UART_RX</code> modules, so that you get some feedback when key events occur. A good place to put these is in state transitions, or when transmitting/receiving a bit. Here are some examples:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">// in UART_TX module:</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>     <span class="kw">case</span> <span class="op">(</span>state<span class="op">)</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>       <span class="dv">WAIT:</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>         <span class="kw">begin</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>        <span class="kw">if</span> <span class="op">(</span>start<span class="op">)</span> <span class="kw">begin</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>           bit_index <span class="op">&lt;=</span> <span class="dv">0</span><span class="op">;</span>  <span class="co">// start at LSB</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>           tx        <span class="op">&lt;=</span> <span class="dv">0</span><span class="op">;</span>  <span class="co">// start bit</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>           state     <span class="op">&lt;=</span> SEND<span class="op">;</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>           <span class="dt">$display</span><span class="op">(</span><span class="st">&quot;  ++TX: Starting %hh&quot;</span><span class="op">,</span>d_out<span class="op">);</span>         </span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>        <span class="kw">end</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>        <span class="kw">else</span> <span class="kw">begin</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>           tx   <span class="op">&lt;=</span> <span class="dv">1</span><span class="op">;</span> <span class="co">// idle signal</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>           done <span class="op">&lt;=</span> <span class="dv">0</span><span class="op">;</span> <span class="co">// not done, ready for data      </span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>        <span class="kw">end</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>         <span class="kw">end</span></span></code></pre></div>
+<p>The above example prints out a message when the TX module starts a transmission. The message also indicates the data to be transmitted.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co">// in UART_RX module:</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>       <span class="dv">WAIT:</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>         <span class="kw">begin</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>        <span class="kw">if</span> <span class="op">(!</span>rx<span class="op">)</span> <span class="kw">begin</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>           bit_index <span class="op">&lt;=</span> <span class="dv">0</span><span class="op">;</span>  <span class="co">// start at LSB</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>           state     <span class="op">&lt;=</span> RECV<span class="op">;</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>           <span class="dt">$display</span><span class="op">(</span><span class="st">&quot;   -- RX: start bit detected&quot;</span><span class="op">);</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>           </span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>        <span class="kw">end</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>         <span class="kw">end</span></span></code></pre></div>
+<p>The above example prints out a message when the RX module sees the start bit. This indicates that the TX and RX modules are both engaged in communication.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co">// In the RX module:</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>       <span class="dv">RECV:</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>         <span class="kw">begin</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>        d_in<span class="op">[</span>bit_index<span class="op">]</span> <span class="op">&lt;=</span> rx<span class="op">;</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>        <span class="dt">$write</span><span class="op">(</span><span class="st">&quot;&gt;%b &quot;</span><span class="op">,</span>rx<span class="op">);</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>        <span class="kw">if</span> <span class="op">(</span>bit_index <span class="op">==</span> <span class="dv">7</span><span class="op">)</span> <span class="kw">begin</span>          </span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>           state <span class="op">&lt;=</span> STOP<span class="op">;</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>           <span class="dt">$display</span><span class="op">(</span><span class="st">&quot;  -- RX: checking for STOP bit&quot;</span><span class="op">);</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>           </span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>        <span class="kw">end</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>        <span class="kw">else</span> <span class="kw">begin</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>           bit_index <span class="op">&lt;=</span> bit_index <span class="op">+</span> <span class="dv">1</span><span class="op">;</span>         </span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>        <span class="kw">end</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>         <span class="kw">end</span></span></code></pre></div>
+<p>The above example prints out each bit as it is received. Once all the bits are received, it prints a message indicating that it will check for the STOP bit.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co">// In the TX module:</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>       <span class="dv">STOP:</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>         <span class="kw">begin</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>        <span class="kw">if</span> <span class="op">(</span>start<span class="op">)</span> <span class="kw">begin</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>           done <span class="op">&lt;=</span> <span class="dv">1</span><span class="op">;</span> <span class="co">// Signal that the transmission is complete</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>           tx   <span class="op">&lt;=</span> <span class="dv">1</span><span class="op">;</span> <span class="co">// Stop bit          </span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>        <span class="kw">end</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>        <span class="kw">else</span> <span class="kw">begin</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>           done <span class="op">&lt;=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>           state <span class="op">&lt;=</span> WAIT<span class="op">;</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>           <span class="dt">$display</span><span class="op">(</span><span class="st">&quot;  ++TX: Completed.&quot;</span><span class="op">);</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>        <span class="kw">end</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>         <span class="kw">end</span></span></code></pre></div>
+<p>The above example prints out a message when the TX module is finished. Similarly, the RX module can announce when it’s wrapping up:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co">// In the RX module:</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>       <span class="dv">STOP:</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>         <span class="kw">begin</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>        <span class="kw">if</span> <span class="op">(!</span>ready <span class="op">&amp;&amp;</span> rx<span class="op">)</span> <span class="kw">begin</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>           <span class="dt">$display</span><span class="op">(</span><span class="st">&quot;  -- RX: data %hh ready, waiting for ack&quot;</span><span class="op">,</span> d_in<span class="op">);</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>           ready <span class="op">&lt;=</span> <span class="dv">1</span><span class="op">;</span> <span class="co">// Signal that the transmission is complete</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>        <span class="kw">end</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>        <span class="kw">else</span> <span class="kw">if</span> <span class="op">(</span>ack <span class="op">&amp;&amp;</span> ready<span class="op">)</span> <span class="kw">begin</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>           <span class="dt">$display</span><span class="op">(</span><span class="st">&quot;  --RX: completed with %hh&quot;</span><span class="op">,</span> d_in<span class="op">);</span>           </span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>           ready <span class="op">&lt;=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>           state <span class="op">&lt;=</span> WAIT<span class="op">;</span>          </span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>        <span class="kw">end</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>         <span class="kw">end</span></span></code></pre></div>
+<p>The above example prints out a message when the STOP bit is detected (i.e. when <code class="sourceCode verilog">rx</code> goes HIGH to terminate the transaction). It prints another message when the <code class="sourceCode verilog">ack</code> signal is detected, indicating that the transaction is completed.</p>
+<p>With these messages printed by the TX and RX state machines, the console produces information like this:</p>
+<pre class="text"><code>  ++TX: Starting 24h
+   -- RX: start bit detected
+&gt;0 &gt;0 &gt;1 &gt;0 &gt;0 &gt;1 &gt;0 &gt;0   -- RX: checking for STOP bit
+  -- RX: data 24h ready, waiting for ack
+  ++TX: Completed.</code></pre>
+<p>This information is detailed enough to verify that the TX and RX state machines are not stuck, that the UART transmission is initiated and detected, the individual bit values are correct, and the transaction is properly concluded.</p>
+<h2 id="clock-divider-sync-process">Clock Divider <code class="sourceCode verilog">sync</code> Process</h2>
+<p>In the UART_RX module, it’s necessary to have a synchronization process so that the receiver state machine is<br />
+in-phase with the UART data. This can be done using a synchronizing clock divider:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">module</span> clock_divider</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  #<span class="op">(</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">parameter</span> N<span class="op">=</span><span class="dv">5208</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">)</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>   <span class="op">(</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    <span class="dt">input</span>      clk<span class="op">,</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">input</span>      rst_n<span class="op">,</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">input</span>      sync<span class="op">,</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    <span class="dt">output</span> <span class="dt">reg</span> div_clk</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">);</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>   <span class="dt">integer</span>     clk_count<span class="op">;</span></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>   <span class="kw">initial</span> <span class="kw">begin</span></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>      div_clk <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>      clk_count <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>   <span class="kw">end</span></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>   <span class="kw">always</span> <span class="op">@(</span><span class="kw">posedge</span> clk<span class="op">,</span> <span class="kw">negedge</span> rst_n<span class="op">)</span> <span class="kw">begin</span></span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>      <span class="kw">if</span> <span class="op">(!</span>rst_n<span class="op">)</span> <span class="kw">begin</span></span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>     div_clk   <span class="op">&lt;=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>     clk_count <span class="op">&lt;=</span> <span class="dv">0</span><span class="op">;</span>     </span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>      <span class="kw">end</span></span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>      <span class="kw">else</span> <span class="kw">begin</span></span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>     <span class="kw">if</span> <span class="op">(</span>sync<span class="op">)</span> <span class="kw">begin</span></span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a>        div_clk   <span class="op">&lt;=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>        clk_count <span class="op">&lt;=</span> N<span class="op">;</span></span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a>     <span class="kw">end</span></span>
+<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a>     <span class="kw">else</span> <span class="kw">if</span> <span class="op">(</span>clk_count <span class="op">==</span> N<span class="op">)</span> <span class="kw">begin</span></span>
+<span id="cb9-31"><a href="#cb9-31" aria-hidden="true" tabindex="-1"></a>        div_clk   <span class="op">&lt;=</span> <span class="op">~</span>div_clk<span class="op">;</span></span>
+<span id="cb9-32"><a href="#cb9-32" aria-hidden="true" tabindex="-1"></a>        clk_count <span class="op">&lt;=</span> <span class="dv">0</span><span class="op">;</span>     </span>
+<span id="cb9-33"><a href="#cb9-33" aria-hidden="true" tabindex="-1"></a>     <span class="kw">end</span></span>
+<span id="cb9-34"><a href="#cb9-34" aria-hidden="true" tabindex="-1"></a>     <span class="kw">else</span> <span class="kw">begin</span></span>
+<span id="cb9-35"><a href="#cb9-35" aria-hidden="true" tabindex="-1"></a>        clk_count <span class="op">&lt;=</span> clk_count <span class="op">+</span> <span class="dv">1</span><span class="op">;</span>     </span>
+<span id="cb9-36"><a href="#cb9-36" aria-hidden="true" tabindex="-1"></a>     <span class="kw">end</span></span>
+<span id="cb9-37"><a href="#cb9-37" aria-hidden="true" tabindex="-1"></a>      <span class="kw">end</span></span>
+<span id="cb9-38"><a href="#cb9-38" aria-hidden="true" tabindex="-1"></a>   <span class="kw">end</span></span>
+<span id="cb9-39"><a href="#cb9-39" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb9-40"><a href="#cb9-40" aria-hidden="true" tabindex="-1"></a><span class="kw">endmodule</span> <span class="co">// clock_divider</span></span></code></pre></div>
+<p>The above clock divider relies on a <code class="sourceCode verilog">sync</code> signal that must be generate from the <code class="sourceCode verilog">uart_rx</code> module. Here is an example process for generating the <code class="sourceCode verilog">sync</code> signal:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>   <span class="co">//-----------------------------------------</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>   <span class="co">// sync process</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>   <span class="co">//-----------------------------------------</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>   <span class="dt">reg</span> rx_d<span class="op">;</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>   <span class="dt">reg</span> rx_negedge<span class="op">;</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>   <span class="kw">always</span> <span class="op">@(</span><span class="kw">posedge</span> clk<span class="op">,</span> <span class="kw">negedge</span> rst_n<span class="op">)</span> <span class="kw">begin</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>      <span class="kw">if</span> <span class="op">(!</span>rst_n<span class="op">)</span> <span class="kw">begin</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>     sync       <span class="op">&lt;=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>     rx_d       <span class="op">&lt;=</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>     rx_negedge <span class="op">&lt;=</span> <span class="dv">0</span><span class="op">;</span>    </span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>      <span class="kw">end</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>      <span class="kw">else</span> <span class="kw">begin</span></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>     rx_d       <span class="op">&lt;=</span> rx<span class="op">;</span></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>     rx_negedge <span class="op">&lt;=</span> rx_d <span class="op">&amp;</span> <span class="op">~</span>rx<span class="op">;</span></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>     </span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>     <span class="kw">if</span> <span class="op">((</span>state <span class="op">==</span> WAIT<span class="op">)</span> <span class="op">&amp;&amp;</span> rx_negedge<span class="op">)</span> </span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>       sync <span class="op">&lt;=</span> <span class="dv">1</span><span class="op">;</span>       </span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>     <span class="kw">else</span></span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>       sync <span class="op">&lt;=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>     </span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>      <span class="kw">end</span></span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>   <span class="kw">end</span></span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>   <span class="co">//----------------------------------------</span></span></code></pre></div>
+<p>The same clock divider can be used in the UART_TX module, without the <code class="sourceCode verilog">sync</code> signal, like this:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>   clock_divider #<span class="op">(</span>.N<span class="op">(</span>N<span class="op">))</span> CD <span class="op">(</span>clk<span class="op">,</span> rst_n<span class="op">,</span> <span class="bn">1&#39;b0</span><span class="op">,</span> uclk<span class="op">);</span> <span class="co">// sync disable for TX module</span></span></code></pre></div>
+<h2 id="adjust-clock-divider-period">Adjust Clock Divider Period</h2>
+<p>For simulation purposes, it is not always necessary to simulate 9600 baud. We can speed-up the UART interface using a top-level parameter, like this:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">module</span> top #<span class="op">(</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>         <span class="dt">parameter</span> N<span class="op">=</span><span class="dv">5208</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>         <span class="op">)</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>   <span class="op">(</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">input</span>        clk<span class="op">,</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    <span class="dt">input</span>        rst<span class="op">,</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">input</span>        start_btn<span class="op">,</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">input</span>        ack_btn<span class="op">,</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>    <span class="dt">input</span> <span class="op">[</span><span class="dv">7</span><span class="op">:</span><span class="dv">0</span><span class="op">]</span>      sw<span class="op">,</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>    <span class="dt">output</span> <span class="dt">reg</span> <span class="op">[</span><span class="dv">7</span><span class="op">:</span><span class="dv">0</span><span class="op">]</span> led </span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">);</span></span></code></pre></div>
+<p>Within the <code class="sourceCode verilog">top</code> module, the parameter must be passed down to the <code class="sourceCode verilog">uart_tx</code> and <code class="sourceCode verilog">uart_rx</code> modules:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>   uart_tx #<span class="op">(</span>.N<span class="op">(</span>N<span class="op">))</span> TX1</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>     <span class="op">(</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>      .clk<span class="op">(</span>clk<span class="op">),</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>      .rst_n<span class="op">(</span>rst_n<span class="op">),</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>      .start<span class="op">(</span>start<span class="op">),</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>      .d_out<span class="op">(</span>sw<span class="op">),</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>      .tx<span class="op">(</span>txrx<span class="op">),</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>      .done<span class="op">(</span>done<span class="op">)</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>      <span class="op">);</span></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>   uart_rx #<span class="op">(</span>.N<span class="op">(</span>N<span class="op">))</span> RX1</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>     <span class="op">(</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>      .clk<span class="op">(</span>clk<span class="op">),</span></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>      .rst_n<span class="op">(</span>rst_n<span class="op">),</span></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>      .d_in<span class="op">(</span>d<span class="op">),</span></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>      .rx<span class="op">(</span>txrx<span class="op">),</span></span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>      .ready<span class="op">(</span>ready<span class="op">),</span></span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>      .ack<span class="op">(</span>ack<span class="op">)</span></span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>   <span class="op">);</span></span></code></pre></div>
+<p>Within the TX and RX modules, the parameter <code class="sourceCode verilog">N</code> must be similarly declared, and must be passed along to the clock divider(s) used in those modules. For the RX module:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">module</span> uart_rx #<span class="op">(</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>         <span class="dt">parameter</span> N<span class="op">=</span><span class="dv">5208</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>         <span class="op">)</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  <span class="op">(</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>   <span class="dt">input</span>            clk<span class="op">,</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>   <span class="dt">input</span>            rst_n<span class="op">,</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>   <span class="dt">output</span> <span class="dt">reg</span> <span class="op">[</span><span class="dv">7</span><span class="op">:</span><span class="dv">0</span><span class="op">]</span> d_in<span class="op">,</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>   <span class="dt">input</span>      rx<span class="op">,</span></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>   <span class="dt">output</span> <span class="dt">reg</span> ready<span class="op">,</span></span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>   <span class="dt">input</span>      ack</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>   <span class="op">);</span></span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>   <span class="dt">reg</span>  sync<span class="op">;</span>  <span class="co">// Sync signal for clock divider</span></span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>   <span class="dt">wire</span> uclk<span class="op">;</span>  <span class="co">// UART clock (clock divider output)</span></span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>   clock_divider #<span class="op">(</span>.N<span class="op">(</span>N<span class="op">))</span> CD <span class="op">(</span>clk<span class="op">,</span> rst_n<span class="op">,</span> sync<span class="op">,</span> uclk<span class="op">);</span></span></code></pre></div>
+<p>To transmit data at 9600 baud, the default value is <code class="sourceCode verilog">N<span class="op">=</span><span class="dv">5208</span></code>. But for simulation, we could set it to something smaller like 10. The testbench instantiation can indicate the altered parameter value:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>   top #<span class="op">(</span>.N<span class="op">(</span><span class="dv">10</span><span class="op">))</span> DUT <span class="op">(</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>        .clk<span class="op">(</span>clk<span class="op">),</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>        .rst<span class="op">(</span>rst<span class="op">),</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>        .start_btn<span class="op">(</span>start_btn<span class="op">),</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>        .ack_btn<span class="op">(</span>ack_btn<span class="op">),</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>        .sw<span class="op">(</span>sw<span class="op">),</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>        .led<span class="op">(</span>led<span class="op">)</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>     <span class="op">);</span></span></code></pre></div>
+<h2 id="testbench-organization">Testbench Organization</h2>
+<p>The testbench should:</p>
+<ul>
+<li>Intantiate the <code class="sourceCode verilog">top</code> module</li>
+<li>Instantiate a <code class="sourceCode verilog">button_pusher</code> module with parameter <code class="sourceCode verilog">Nbtn<span class="op">=</span><span class="dv">2</span></code>.</li>
+<li>Assign one of the buttons to <code class="sourceCode verilog">start</code> and the other button to <code class="sourceCode verilog">ack</code>.</li>
+<li>Detect changes in LED signals and print to console.</li>
+<li>Generate new random switch values after the LEDs change.</li>
+</ul>
+<p>Here is an example showing how to use the <code class="sourceCode verilog">button_pusher</code>:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>   <span class="dt">wire</span>       start_btn<span class="op">;</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>   <span class="dt">wire</span>       ack_btn<span class="op">;</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>   <span class="dt">wire</span> <span class="op">[</span><span class="dv">1</span><span class="op">:</span><span class="dv">0</span><span class="op">]</span> btn<span class="op">;</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>   button_pusher #<span class="op">(</span>.Nbtn<span class="op">(</span><span class="dv">2</span><span class="op">))</span> BTNPUSH</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>     <span class="op">(</span>.clk<span class="op">(</span>clk<span class="op">),</span> .btn<span class="op">(</span>btn<span class="op">));</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>   <span class="kw">assign</span> start_btn <span class="op">=</span> btn<span class="op">[</span><span class="dv">0</span><span class="op">];</span></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>   <span class="kw">assign</span> ack_btn   <span class="op">=</span> btn<span class="op">[</span><span class="dv">1</span><span class="op">];</span></span></code></pre></div>
+<p>To detect when the LEDs change, we can use a delay register like this:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>   <span class="dt">reg</span> <span class="op">[</span><span class="dv">7</span><span class="op">:</span><span class="dv">0</span><span class="op">]</span>          led_D<span class="op">;</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>   <span class="dt">reg</span> <span class="op">[</span><span class="dv">7</span><span class="op">:</span><span class="dv">0</span><span class="op">]</span>          sw_D<span class="op">;</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>   <span class="kw">always</span> <span class="op">@(</span><span class="kw">posedge</span> clk<span class="op">)</span> <span class="kw">begin</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>      rst <span class="op">&lt;=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>      <span class="co">// Detect changes in input/output signals</span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>      led_D <span class="op">&lt;=</span> led<span class="op">;</span></span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>      sw_D  <span class="op">&lt;=</span> sw<span class="op">;</span></span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>      </span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>      <span class="kw">if</span> <span class="op">(</span>led_D <span class="op">!=</span> led<span class="op">)</span> <span class="kw">begin</span></span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>     sw <span class="op">&lt;=</span> <span class="dt">$random</span><span class="op">();</span> </span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>     <span class="dt">$display</span><span class="op">(</span><span class="st">&quot;========= LED Change ===========</span><span class="ch">\n</span><span class="st">  %b</span><span class="ch">\n</span><span class="st">====================&quot;</span><span class="op">,</span>led<span class="op">);</span></span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>      <span class="kw">end</span></span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a>      <span class="kw">if</span> <span class="op">(</span>sw_D <span class="op">!=</span> sw<span class="op">)</span> <span class="kw">begin</span></span>
+<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a>     <span class="dt">$display</span><span class="op">(</span><span class="st">&quot;========= Switch Change ========</span><span class="ch">\n</span><span class="st"> %b</span><span class="ch">\n</span><span class="st">===================&quot;</span><span class="op">,</span>sw<span class="op">);</span></span>
+<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a>     </span>
+<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a>      <span class="kw">end</span></span>
+<span id="cb17-20"><a href="#cb17-20" aria-hidden="true" tabindex="-1"></a>   <span class="kw">end</span></span></code></pre></div>
+<p>In this example, a delay register is also used for <code class="sourceCode verilog">sw</code> to report the new switch values. With these elements combined, you should see an output from <code class="sourceCode verilog">test_top</code> like this:</p>
+<pre class="text"><code>btn  0 ON
+(bounce)
+btn  0 ON
+(bounce)
+btn  0 ON
+  ++TX: Starting 24h
+   -- RX: start bit detected
+&gt;0 &gt;0 &gt;1 &gt;0 &gt;0 &gt;1 &gt;0 &gt;0   -- RX: checking for STOP bit
+  -- RX: data 24h ready, waiting for ack
+  ++TX: Completed.
+btn  0 OFF
+(bounce)
+(bounce)
+(bounce)
+(bounce)
+(bounce)
+(bounce)
+(bounce)
+(bounce)
+btn  0 ON
+(bounce)
+btn  0 ON
+(bounce)
+btn  0 ON
+(bounce)
+btn  0 ON
+(bounce)
+btn  0 ON
+btn  0 OFF
+btn  0 ON
+(bounce)
+btn  0 ON
+btn  0 OFF
+btn  1 ON
+(bounce)
+btn  1 ON
+========= LED Change ===========
+  00100100
+====================
+========= Switch Change ========
+ 11110010
+===================
+  --RX: completed with 24h
+btn  1 OFF</code></pre>
+<p>Set the testbench stopping condition to large enough value to see several start/ack events, so that the function is verified.</p>
+</body>
+</html>

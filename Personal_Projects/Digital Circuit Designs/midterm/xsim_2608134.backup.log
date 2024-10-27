@@ -1,0 +1,30 @@
+#-----------------------------------------------------------
+# xsim v2021.1 (64-bit)
+# SW Build 3247384 on Thu Jun 10 19:36:07 MDT 2021
+# IP Build 3246043 on Fri Jun 11 00:30:35 MDT 2021
+# Start of session at: Mon Mar  4 09:30:01 2024
+# Process ID: 2608134
+# Current directory: /home/joc460/gitclones/3700/midterm
+# Command line: xsim -mode tcl -source {xsim.dir/sim/xsim_script.tcl}
+# Log file: /home/joc460/gitclones/3700/midterm/xsim.log
+# Journal file: /home/joc460/gitclones/3700/midterm/xsim.jou
+#-----------------------------------------------------------
+source xsim.dir/sim/xsim_script.tcl
+# xsim {sim} -autoloadwcfg -runall
+Time resolution is 1 ps
+run -all
+clk:     1 clk diff:     1 state: 1 clear: 0 t: 0 btn: 0 led:  0
+clk:     2 clk diff:     1 state: 0 clear: 1 t: 0 btn: 0 led:  0
+clk:    11 clk diff:     9 state: 0 clear: 1 t: 0 btn: 1 led:  0
+clk:    21 clk diff:    10 state: 0 clear: 1 t: 0 btn: 0 led:  0
+clk:    25 clk diff:     4 state: 0 clear: 1 t: 0 btn: 1 led:  0
+clk:    31 clk diff:     6 state: 0 clear: 1 t: 0 btn: 0 led:  0
+clk:    32 clk diff:     1 state: 0 clear: 1 t: 0 btn: 1 led:  0
+clk:   201 clk diff:   169 state: 0 clear: 1 t: 0 btn: 0 led:  0
+clk:   211 clk diff:    10 state: 0 clear: 1 t: 0 btn: 1 led:  0
+clk:   216 clk diff:     5 state: 0 clear: 1 t: 0 btn: 0 led:  0
+clk:   231 clk diff:    15 state: 0 clear: 1 t: 0 btn: 1 led:  0
+clk:   236 clk diff:     5 state: 0 clear: 1 t: 0 btn: 0 led:  0
+$finish called at time : 10010 ns : File "/home/joc460/gitclones/3700/midterm/src/testbench.v" Line 193
+exit
+INFO: [Common 17-206] Exiting xsim at Mon Mar  4 09:30:14 2024...

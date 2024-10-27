@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>UART Terminal Communication: Transmit Side</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../../../3700.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">UART Terminal Communication: Transmit Side</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#the-uart-interface">The UART Interface</a>
+<ul>
+<li><a href="#handshaking">Handshaking</a></li>
+<li><a href="#uart-data-frame">UART data frame</a></li>
+</ul></li>
+<li><a href="#assigned-tasks">Assigned Tasks</a>
+<ul>
+<li><a href="#implement-a-uart-transmitter">Implement a UART transmitter</a></li>
+<li><a href="#uart-transmitter-state-machine">UART Transmitter State Machine</a></li>
+<li><a href="#top-module">Top Module</a></li>
+<li><a href="#simulate-the-uart">Simulate the UART</a></li>
+<li><a href="#implement-and-test">Implement and Test</a>
+<ul>
+<li><a href="#testing-on-linux-systems">Testing on Linux Systems</a></li>
+<li><a href="#testing-on-windows-systems">Testing on Windows Systems</a></li>
+</ul></li>
+<li><a href="#test-cases">Test Cases</a></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="the-uart-interface">The UART Interface</h1>
+<p>The <strong>Universal Asynchronous Receiver Transmitter (UART)</strong> has been one of the most widely used data interfaces for decades. In this lab, we will design a UART and use it to communicate between the Basys3 board and a terminal program on your computer.</p>
+<p>UART specs for this lab:</p>
+<ul>
+<li>9600 <strong>baud</strong></li>
+<li>8 bits per word</li>
+<li>1 stop bit</li>
+</ul>
+<p>The term “baud” refers to the number of <strong>symbols per second</strong> transmitted on the UART wire. A <strong>symbol</strong> is a HIGH or LOW signal value. In order to synchronize communication with a single wire, the protocol uses one <strong>start symbol (i.e. start bit)</strong> to indicate the beginning of a transmission, and one <strong>stop symbol (i.e. stop bit</strong> to indicate the conclusion of a transmission. In total, ten “symbols” are sent to communicate an 8-bit word, so the effective <strong>bit rate</strong> is <span class="math inline">0.8 × (9600) = 7680</span> bits/sec. The <strong>pulse width</strong> (i.e. duration) of each symbol is <span class="math inline">1/9600</span> seconds, or 104.17us.</p>
+<h2 id="handshaking">Handshaking</h2>
+<p>We want to design a UART that can be reused in future designs. To make a reusable design, we should plan for how the UART will interact with its application:</p>
+<p><img src="figures/uart_tx.svg" /></p>
+<h2 id="uart-data-frame">UART data frame</h2>
+<p>The receiving device expects to receive signals formatted like the timing diagram shown below. When the bus wire is idle, it should have a HIGH value. The <strong>start condition</strong> is when the signal drops from HIGH to LOW.</p>
+<p><img src="figures/uart_rx_wire.svg" /></p>
+<p>After the start event, the signal should stay LOW for the duration of one bit. At 9600 baud, the duration is 1/9600 s. Then the data is sent one bit at a time, <strong>starting with the LSB</strong>. After all eight bits have been sent, a <strong>stop bit</strong> (logic HIGH) is transmitted, returning the wire to its idle HIGH level. After the stop bit, the UART can immediately follow with another start condition and data frame, or it can hold the line HIGH in an <strong>idle condition</strong> until it needs to transmit again.</p>
+<h1 id="assigned-tasks">Assigned Tasks</h1>
+<h2 id="implement-a-uart-transmitter">Implement a UART transmitter</h2>
+<p>Based on the provided state diagram, implement a module named <strong>uart_tx</strong> with the following specifications:</p>
+<ul>
+<li>Use a <strong>clock divider</strong> to generate a <strong>9600 Hz clock</strong> for the state machine</li>
+<li>Inputs: <strong><code class="sourceCode verilog">start</code>, <code class="sourceCode verilog">clk</code></strong>, and <strong><code class="sourceCode verilog">rst_l</code></strong> (all 1-bit)</li>
+<li>Input: <strong><code class="sourceCode verilog">d_out</code></strong> (8-bit)</li>
+<li>Outputs: <strong><code class="sourceCode verilog">done</code></strong> and <strong><code class="sourceCode verilog">tx</code></strong> (both 1-bit)</li>
+<li><code class="sourceCode verilog">rst_l</code> initializes the module in an <code class="sourceCode verilog">IDLE</code> or <code class="sourceCode verilog">WAIT</code> state</li>
+<li>The application (i.e. top module) will connect <strong><code class="sourceCode verilog">tx</code></strong> to the Basys3 board’s UART <code class="sourceCode verilog">tx</code> pin.</li>
+</ul>
+<h2 class="shrink" id="uart-transmitter-state-machine">UART Transmitter State Machine</h2>
+<p>The transmit operation can be reduced to three states in a high-level machine:</p>
+<p><img src="figures/state_machine.svg" /></p>
+<h2 id="top-module">Top Module</h2>
+<p>Once your UART is verified, create a new <strong>Design Source</strong> to implement a top module:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">module</span> top(</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">input</span> clk,</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">input</span> rst,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">output</span> tx,</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">input</span> send</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    );</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="dt">reg</span> [<span class="dv">7</span>:<span class="dv">0</span>]   message[<span class="dv">4</span>:<span class="dv">0</span>];   <span class="co">// Message to transmit (an array of bytes)</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="dt">reg</span> [<span class="dv">7</span>:<span class="dv">0</span>]   d_out;          <span class="co">// UART transmit data (one byte)</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="dt">reg</span> [<span class="dv">31</span>:<span class="dv">0</span>]  msg_count;      <span class="co">// Array index of the message byte </span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  <span class="dt">reg</span>         start;          <span class="co">// Handshake start signal to send one byte </span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  <span class="dt">wire</span>        done;           <span class="co">// Handshake done signal indicating transmit complete</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>  <span class="dt">wire</span>        rst_l;          <span class="co">// Active-low reset signal</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>  <span class="kw">assign</span>      rst_l = ~rst;</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    uart_tx UART1(</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>        .clk(clk),</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>        .d_out(d_out),</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>        .start(start),</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>        .rst_l(rst_l),</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>        .done(done),</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>        .tx(tx)</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>        );</span></code></pre></div>
+<p>Define the top-level behavior. The first <strong>if</strong> condition initializes the signals. In this example, the message is the string “hello”, which contains five letters. The assignments below use the 8-bit ASCII value for each letter.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">always</span> @(<span class="kw">posedge</span> clk, <span class="kw">negedge</span> rst_l) <span class="kw">begin</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>       <span class="kw">if</span> (~rst_l) <span class="kw">begin</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>         msg_count &lt;= <span class="dv">0</span>;</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>         message[<span class="dv">0</span>] &lt;= <span class="st">&quot;h&quot;</span>;</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>         message[<span class="dv">1</span>] &lt;= <span class="st">&quot;e&quot;</span>;</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>         message[<span class="dv">2</span>] &lt;= <span class="st">&quot;l&quot;</span>;</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>         message[<span class="dv">3</span>] &lt;= <span class="st">&quot;l&quot;</span>;</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>         message[<span class="dv">4</span>] &lt;= <span class="st">&quot;o&quot;</span>;</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>         start      &lt;= <span class="dv">0</span>;</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>         d_out      &lt;= <span class="st">&quot;h&quot;</span>;</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>       <span class="kw">end</span></span></code></pre></div>
+<p>Next define a process to implement the handshaking and send out the message bytes one-by-one:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>       <span class="kw">else</span> <span class="kw">begin</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>         <span class="kw">if</span> (send &amp;&amp; (!start) &amp;&amp; (!done)) <span class="kw">begin</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>           start &lt;= <span class="dv">1</span>;</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>           d_out &lt;= message[msg_count];</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>         <span class="kw">end</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>         <span class="kw">else</span> <span class="kw">if</span> (start &amp;&amp; done) <span class="kw">begin</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>            <span class="co">// De-bounce the send button at end of message:</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>            <span class="kw">if</span> ((msg_count == <span class="dv">4</span>)&amp;&amp;(~send)) <span class="kw">begin</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>               msg_count &lt;= <span class="dv">0</span>;</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>               start     &lt;= <span class="dv">0</span>;</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>            <span class="kw">end</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>            <span class="co">// Increment the byte index until reaching the end</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>            <span class="kw">else</span> <span class="kw">if</span> (msg_count &lt; <span class="dv">4</span>) <span class="kw">begin</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>               msg_count &lt;= msg_count + <span class="dv">1</span>;</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>               start &lt;= <span class="dv">0</span>;</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>            <span class="kw">end</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>         <span class="kw">end</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>       <span class="kw">end</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>    <span class="kw">end</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a><span class="kw">endmodule</span></span></code></pre></div>
+<h2 id="simulate-the-uart">Simulate the UART</h2>
+<p>A <code class="sourceCode verilog">testbench</code> module is provided in <code class="sourceCode verilog">src/testbench.v</code>. For this assignment, the <code class="sourceCode verilog">testbench</code> is designed a little differently. Since the UART transmission requires precise timing, the <code class="sourceCode verilog">testbench</code> uses <code class="sourceCode verilog">#</code> delay statements to specify timed events with nano-second precision. These statements are all placed in the <code class="sourceCode verilog"><span class="kw">initial</span></code> block, indicating that the simulator should start processing the pattern starting from time 0, with timing controlled by the indicated <code class="sourceCode verilog">#</code> delays.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>   <span class="co">// -----------------------------------------------------</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>   <span class="co">// CREATE STIMULI AND REPORT RESULTS</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>   <span class="co">// -----------------------------------------------------</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>   <span class="dt">integer</span> i;</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>   <span class="dt">integer</span> tx_count;   </span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>   <span class="dt">reg</span> [<span class="dv">7</span>:<span class="dv">0</span>] d_in;</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>   <span class="kw">initial</span> <span class="kw">begin</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>      rst      = <span class="dv">1</span>;  <span class="co">// start up in reset condition</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>      tx_count = <span class="dv">0</span>;</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>      </span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>      <span class="co">// After 100ns, stop resetting</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>      <span class="bn">#100</span> rst = <span class="dv">0</span>;</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>      <span class="co">// Delay 1000ns, then &quot;send&quot;</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>      <span class="bn">#1000</span> send = <span class="dv">1</span>;</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>      <span class="kw">while</span> (<span class="dv">1</span>) <span class="kw">begin</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>     <span class="co">// Wait for a signal:</span></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>     <span class="kw">while</span> (tx) <span class="kw">begin</span></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Delay 10us between checks</span></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>        <span class="bn">#10000</span>;  </span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>     <span class="kw">end</span></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>     </span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>     <span class="dt">$write</span>(<span class="st">&quot;Start bit. TX=&quot;</span>);</span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>     <span class="dt">$fwrite</span>(fid,<span class="st">&quot;Start bit. TX=&quot;</span>); </span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>     </span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>     <span class="co">// Get eight bits:</span></span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>     <span class="kw">for</span> (i=<span class="dv">0</span>; i&lt;<span class="dv">8</span>; i=i+<span class="dv">1</span>) <span class="kw">begin</span></span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>        <span class="bn">#104170</span>;</span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>        d_in[i] = tx;</span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a>        <span class="dt">$write</span>(<span class="st">&quot;%b&quot;</span>,tx);</span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a>        <span class="dt">$fwrite</span>(fid,<span class="st">&quot;%b&quot;</span>,tx);       </span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a>     <span class="kw">end</span></span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a>     <span class="co">// Wait for stop bit:</span></span>
+<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a>     <span class="bn">#104170</span>;</span>
+<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a>     </span>
+<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a>     <span class="kw">if</span> (tx) <span class="kw">begin</span></span>
+<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a>        <span class="dt">$write</span>(<span class="st">&quot;. Stop bit. &quot;</span>);</span>
+<span id="cb4-42"><a href="#cb4-42" aria-hidden="true" tabindex="-1"></a>        <span class="dt">$fwrite</span>(fid,<span class="st">&quot;. Stop bit. &quot;</span>);</span>
+<span id="cb4-43"><a href="#cb4-43" aria-hidden="true" tabindex="-1"></a>     <span class="kw">end</span></span>
+<span id="cb4-44"><a href="#cb4-44" aria-hidden="true" tabindex="-1"></a>     <span class="kw">else</span> <span class="kw">begin</span></span>
+<span id="cb4-45"><a href="#cb4-45" aria-hidden="true" tabindex="-1"></a>        <span class="dt">$write</span>(<span class="st">&quot;. BAD STOP BIT. &quot;</span>);</span>
+<span id="cb4-46"><a href="#cb4-46" aria-hidden="true" tabindex="-1"></a>        <span class="dt">$fwrite</span>(fid,<span class="st">&quot;. BAD STOP BIT. &quot;</span>);</span>
+<span id="cb4-47"><a href="#cb4-47" aria-hidden="true" tabindex="-1"></a>     <span class="kw">end</span></span>
+<span id="cb4-48"><a href="#cb4-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-49"><a href="#cb4-49" aria-hidden="true" tabindex="-1"></a>     <span class="dt">$write</span>(<span class="st">&quot;Got %xh(&#39;%c&#39;)</span><span class="ch">\n</span><span class="st">&quot;</span>,d_in,d_in);</span>
+<span id="cb4-50"><a href="#cb4-50" aria-hidden="true" tabindex="-1"></a>     <span class="dt">$fwrite</span>(fid,<span class="st">&quot;Got %xh (&#39;%c&#39;)</span><span class="ch">\n</span><span class="st">&quot;</span>,d_in,d_in);</span>
+<span id="cb4-51"><a href="#cb4-51" aria-hidden="true" tabindex="-1"></a>     tx_count = tx_count + <span class="dv">1</span>;    </span>
+<span id="cb4-52"><a href="#cb4-52" aria-hidden="true" tabindex="-1"></a>      <span class="kw">end</span></span>
+<span id="cb4-53"><a href="#cb4-53" aria-hidden="true" tabindex="-1"></a>   <span class="kw">end</span></span>
+<span id="cb4-54"><a href="#cb4-54" aria-hidden="true" tabindex="-1"></a>   <span class="co">// -------------------------------------------------------</span></span></code></pre></div>
+<p>Run <code class="sourceCode verilog">make</code> to simulate the design. If your UART is correct, you should see this output:</p>
+<pre class="text"><code>Start bit. TX=00010110. Stop bit.Got 68h(&#39;h&#39;)
+Start bit. TX=10100110. Stop bit.Got 65h(&#39;e&#39;)
+Start bit. TX=00110110. Stop bit.Got 6ch(&#39;l&#39;)
+Start bit. TX=00110110. Stop bit.Got 6ch(&#39;l&#39;)
+Start bit. TX=11110110. Stop bit.Got 6fh(&#39;o&#39;)</code></pre>
+<p>If you don’t see this exact pattern, you will need to <strong>debug</strong> your design. For debugging, you may want to review the “Fishbone (Ishikawa) Diagram” method described in the <code class="sourceCode verilog">SPI_READ_WRITE</code> assignment. You should also run <code class="sourceCode verilog">make gui</code> or use <code class="sourceCode verilog">gtkwave</code> to analyze the signal timing.</p>
+<p>Some things that are <strong>likely to go wrong</strong> include the following:</p>
+<ul>
+<li><strong>No output from <code class="sourceCode verilog">testbench</code>.</strong> Could be caused by incorrect port connections, incorrect handshaking, a bad clock divider, or a bad state machine. You’ll want to check <code class="sourceCode verilog">start</code>, the UART clock, and the UART <code class="sourceCode verilog">state</code>.</li>
+<li><strong>All-zero data received.</strong> Check the <code class="sourceCode verilog">tx</code> assignment statement. Also check the <code class="sourceCode verilog">d_out</code> declarations in <code class="sourceCode verilog">top</code> and <code class="sourceCode verilog">UART_tx</code>, and make sure they have 8 bits. Check the port connections where <code class="sourceCode verilog">UART_tx</code> is instantiated. Also check your clock divider timing; if your baud rate is <strong>way too slow</strong> then <code class="sourceCode verilog">testbench</code> will think it sees all zeros, and will report a BAD STOP BIT for each byte.</li>
+<li><strong>Garbled data received.</strong> This most likely means the baud rate is wrong, and could be caused by incorrect clock divider timing. You could also be skipping a start/stop bit.</li>
+<li><strong>Not all bytes received.</strong> If you don’t get all the letters in “hello”, your UART state machine could be getting stuck in the <code class="sourceCode verilog">STOP</code> state.</li>
+</ul>
+<p>This list is not exhaustive by any means, but represents the problems most often encountered in past runs of this class.</p>
+<h2 id="implement-and-test">Implement and Test</h2>
+<p>Create an XDC file based on <code class="sourceCode verilog">Basys3_Master.xdc</code>. Map one of the buttons to the <strong>rst</strong> input, and another button to the <strong>send</strong> input.</p>
+<p>Map <strong><code class="sourceCode verilog">tx</code></strong> to the USB-RS232 <code class="sourceCode verilog">tx</code> pin (search the constraint file for “USB-RS232” to find the correct lines).</p>
+<p>Next run <code class="sourceCode verilog">make implement</code> to generate a bitstream.</p>
+<h3 id="testing-on-linux-systems">Testing on Linux Systems</h3>
+<p>On Linux systems, the <strong><code class="sourceCode verilog">femtocom</code></strong> program should be installed in /usr/local/bin. If not, download the script from the Canvas page.</p>
+<p>Now open a Terminal on your computer and run these commands:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>ls /dev/ttyUSB*</span></code></pre></div>
+<p>You should see one device. Usually it is ttyUSB0 or ttyUSB1 (if the Vivado Hardware Manager is not running, you may see two devices, it’s usually the higher numbered device). If the device is <code class="sourceCode verilog">/dev/ttyUSB0</code>, then you would run:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>  <span class="ex">./femtocom</span> /dev/ttyUSB0</span></code></pre></div>
+<p>Then press the <strong>send</strong> button on your Basys3 board. You should see “hello” appear in your terminal.</p>
+<h3 id="testing-on-windows-systems">Testing on Windows Systems</h3>
+<p>On Windows computers, the PuTTY terminal program is widely used for serial communication. After installing PuTTY, launch it and you will see a dialog window like the one on the right side of the image below. Find the “serial” radio button and click it (see highlight in the picture). Then you need to specify the COM port. To find the correct port number, open the <strong>Device Manager</strong> by typing it into the Windows search bar. You should be able to find the COM port list, as shown on the left side of the image below.</p>
+<figure>
+<img src="figures/putty_session_configuration.jpg" style="width:90.0%" alt="PuTTY session configuration." /><figcaption aria-hidden="true">PuTTY session configuration.</figcaption>
+</figure>
+<p>Verify the session type, COM port, and baud (9600), then click <strong>Open</strong> to start the session. Press the button on your Basys3 (assuming it’s programmed with the <code class="sourceCode verilog">uart_tx</code> bitstream), and you should see your message appear in the terminal:</p>
+<figure>
+<img src="figures/putty_terminal_window.png" style="width:75.0%" alt="PuTTY terminal with uart_tx output message." /><figcaption aria-hidden="true">PuTTY terminal with <code class="sourceCode verilog">uart_tx</code> output message.</figcaption>
+</figure>
+<h2 id="test-cases">Test Cases</h2>
+<p>Record a short video starting with the blank terminal window, then showing you press the “send” button, then showing the “hello” message in the terminal. Upload the video on Canvas.</p>
+<p>Turn in your work using <code class="sourceCode verilog">git</code>:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> add src/*.v *.v *.rpt *.txt *.tcl *.bit *.xdc</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> commit . -m <span class="st">&quot;Complete&quot;</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> push origin master</span></code></pre></div>
+<p>Indicate on Canvas that your assignment is done.</p>
+</body>
+</html>

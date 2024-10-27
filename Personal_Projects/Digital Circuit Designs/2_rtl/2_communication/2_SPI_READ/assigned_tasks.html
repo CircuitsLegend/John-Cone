@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>SPI Chip-to-Chip Communication</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../../../3700.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">SPI Chip-to-Chip Communication</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#the-spi-protocol">The SPI Protocol</a>
+<ul>
+<li><a href="#pmod-ambient-light-sensor-als">PMod Ambient Light Sensor (ALS)</a>
+<ul>
+<li><a href="#spi-signal-timing">SPI Signal Timing</a></li>
+<li><a href="#datasheet-specification">Datasheet Specification</a></li>
+</ul></li>
+<li><a href="#spi-read-module-design">SPI Read Module Design</a>
+<ul>
+<li><a href="#state-diagram-notation">State Diagram Notation</a></li>
+<li><a href="#clock-divider-process">Clock Divider Process</a></li>
+<li><a href="#timer-process">Timer Process</a></li>
+<li><a href="#hierarchy-and-handshaking">Hierarchy and Handshaking</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#assigned-tasks">Assigned Tasks</a>
+<ul>
+<li><a href="#analyze-the-spi-read-state-transition-diagram">Analyze the SPI READ State Transition Diagram</a></li>
+<li><a href="#implement-the-spi-read-interface">Implement the SPI READ Interface</a>
+<ul>
+<li><a href="#module-and-signal-declarations">Module and Signal Declarations</a></li>
+<li><a href="#timer-and-clock-divider-processes">Timer and Clock Divider Processes</a></li>
+<li><a href="#state-machine">State Machine</a></li>
+</ul></li>
+<li><a href="#create-a-top-module">Create a <code class="sourceCode verilog">top</code> Module</a></li>
+<li><a href="#simulate-the-design">Simulate the Design</a></li>
+<li><a href="#implement-the-design">Implement the Design</a></li>
+<li><a href="#test-the-design">Test the Design</a></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="the-spi-protocol">The SPI Protocol</h1>
+<p>The Serial Peripheral Interface (SPI) protocol is a simple framework that facilitates asynchronous digital communication for a wide variety of chips, particularly for peripheral devices like sensors, real-time-clocks, simple displays, non-volatile memories, and analog-to-digital converters (ADCs).</p>
+<p>There are numerous variations on the SPI protocol, but most interfaces support these signals:</p>
+<ul>
+<li><code class="sourceCode verilog">CS_l</code> – active low <strong>chip select</strong> signal.</li>
+<li><code class="sourceCode verilog">SCLK_l</code> – a low-speed active-low <strong>serial clock</strong> that controls timing in the peripheral device.</li>
+<li><code class="sourceCode verilog">SDI</code> – <strong>serial data in</strong>, wire for sending serial data to the peripheral.</li>
+<li><code class="sourceCode verilog">SDO</code> – <strong>serial data out</strong>, wire for receiving serial data from the peripheral.</li>
+</ul>
+<p>The wires for <code class="sourceCode verilog">SCLK</code>, <code class="sourceCode verilog">SDI</code>, and <code class="sourceCode verilog">SDO</code> can be shared among many different peripherals, whereas each peripheral gets its own <code class="sourceCode verilog">CS</code> wire. <em>At most one</em> <code class="sourceCode verilog">CS</code> wire can be LOW at any time. When a device’s <code class="sourceCode verilog">CS</code> wire goes LOW, that device has is selected to use the bus. All the other devices’ <code class="sourceCode verilog">CS</code> wires stay HIGH, meaning they are prevented from using the bus.</p>
+<p><strong>Note on signal names:</strong> The terms “master” (M) and “slave” (S) were historically used for many types of devices, but are now falling out of favor since they are poor descriptors and have undesirable (and unnecessary) social connotations. Technical documentation frequently refers to the controlling device as the “master” and the peripheral as the “slave”. As a result, the terms <code class="sourceCode verilog">MOSI</code> (Master-Out Slave-In) and <code class="sourceCode verilog">MISO</code> (Master-In Slave-Out) are frequently used in place of <code class="sourceCode verilog">SDI</code> and <code class="sourceCode verilog">SDO</code>.</p>
+<p>In this course, terms such as <strong>controller</strong> and <strong>peripheral</strong> are preferred in place of master/slave. Depending on the context, other term pairs could be “supervisor/worker”, “slient/server”, “consumer/producer”, etc.</p>
+<h2 id="pmod-ambient-light-sensor-als">PMod Ambient Light Sensor (ALS)</h2>
+<p>The ALS module is a small circuit board containing an analog light sensor and an analog-to-digital converter (ADC) chip. The I/O pins allow SPI communication between the Basys3 and the ADC chip.</p>
+<p><img src="figures/pmodals.png" style="width:50.0%" /></p>
+<h3 id="spi-signal-timing">SPI Signal Timing</h3>
+<p>In this assignment, we will read sensor data from the ALS device. We will not need to write any data to the device. The procedure to READ data is summarized as follows:</p>
+<ul>
+<li><p>Controller generates <code class="sourceCode verilog">SCLK</code> <strong>between 1 and 4 MHz</strong>.</p></li>
+<li><p>Controller pulls <code class="sourceCode verilog">CS</code> LOW during the HIGH phase of <code class="sourceCode verilog">SCLK</code>, at least 10ns before the falling edge of <code class="sourceCode verilog">SCLK</code>.</p></li>
+<li><p>For the next 15 cycles of SCLK, Controller records 1 bit of data from <code class="sourceCode verilog">SDO</code> on each rising edge of <code class="sourceCode verilog">SCLK</code>. The most significant bits are sent first.</p></li>
+<li><p>In the 16th cycle of <code class="sourceCode verilog">SCLK</code>, Controller pulls <code class="sourceCode verilog">CS</code> HIGH again during the HIGH phase of <code class="sourceCode verilog">SCLK</code>.</p></li>
+<li><p>Controller waits at least 5us before starting another request.</p></li>
+</ul>
+<h3 id="datasheet-specification">Datasheet Specification</h3>
+<p>In the timing diagram, note that the <strong>first three</strong> and <strong>last four</strong> bits are all zero, with 8 data bits in the middle. Out of 16 SCLK cycles, 15 bits are sent, but <strong>only bits 12 down to 5 contain the data</strong>.</p>
+<p><img src="figures/timing_diagram.png" style="width:95.0%" /></p>
+<p>The Pmod ALS only supports READ operations, so we will implement a simplified READ-only SPI protocol. The I/O ports for this module are:</p>
+<p><img src="figures/SPI_module_interface.svg" style="width:70.0%" /></p>
+<p><strong>Internal Signals:</strong></p>
+<p><img src="figures/SPI_module_signals.svg" style="width:70.0%" /></p>
+<h2 id="spi-read-module-design">SPI Read Module Design</h2>
+<h3 id="state-diagram-notation">State Diagram Notation</h3>
+<p>In this course, we will sometimes use a modified Mealy Machine notation for state diagrams. The symbol key is as follows:</p>
+<p><img src="figures/state_diagram_notation.svg" style="width:50.0%" /></p>
+<p><strong>Every edge indicates a clock cycle</strong>. In each clock cycle, the system must follow <strong>exactly one transition</strong> from its current state. Edges may loop back to the same state, or may transition to different states.</p>
+<p>Each transition edge is overlaid with its condition and action. The condition is indicated above a horizontal line, and the action below the line. Assignments are made in concert with the transition, and are specified in the form:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>[signal name]  &lt;=  [value <span class="dt">or</span> expression];</span></code></pre></div>
+<p>The <span class="math inline">⇐</span> symbol indicates a <strong>non-blocking assignment</strong>. With non-blocking assignments, all signal changes are applied simultaneously <strong>at the start of the next clock cycle</strong>. Therefore any transition assignments take effect at the same time the transition completes and the FSM enters its target state.</p>
+<h3 id="clock-divider-process">Clock Divider Process</h3>
+<p>The state machine that produces SCLK requires two states:</p>
+<p><img src="figures/SCLK_state_machine.svg" style="width:70.0%" /></p>
+<h3 id="timer-process">Timer Process</h3>
+<p><img src="figures/timer_process.svg" style="width:60.0%" /></p>
+<h3 id="hierarchy-and-handshaking">Hierarchy and Handshaking</h3>
+<p>You will make a general-purpose <strong>peripheral interface module</strong> for reading data from SPI peripherals. The interface module mediates between the PMOD hardware and the <strong>application</strong> or controller. In this assignment, the application periodically samples the ALS output and displays it on the LEDs.</p>
+<figure>
+<img src="figures/handshaking_protocol.svg" style="width:75.0%" alt="System hierarchy." /><figcaption aria-hidden="true">System hierarchy.</figcaption>
+</figure>
+<p>The application and interface coordinate with each other using a simple handshaking protocol like we used in previous assignments. The handshaking is used at higher levels of the system hierarchy. The handshaking protocol is detailed in the figures below.</p>
+<h4 id="start-of-the-read-operation">Start of the Read Operation</h4>
+<p><img src="figures/handshaking_timing1.svg" style="width:95.0%" /></p>
+<h4 id="spi-does-its-work">SPI Does its Work</h4>
+<p><img src="figures/handshaking_timing2.svg" style="width:95.0%" /></p>
+<h4 id="spi-is-finished-data-is-ready">SPI is Finished, Data is Ready</h4>
+<p><img src="figures/handshaking_timing3.svg" style="width:95.0%" /></p>
+<h4 id="controller-consumes-data">Controller Consumes Data</h4>
+<p><img src="figures/handshaking_timing4.svg" style="width:95.0%" /></p>
+<h4 id="spi-returns-to-idle-condition">SPI Returns to Idle Condition</h4>
+<p><img src="figures/handshaking_timing5.svg" style="width:95.0%" /></p>
+<h1 id="assigned-tasks">Assigned Tasks</h1>
+<h2 id="analyze-the-spi-read-state-transition-diagram">Analyze the SPI READ State Transition Diagram</h2>
+<p>Our READ interface uses the state machine design shown below.</p>
+<figure>
+<img src="figures/simpleSPI_state_diagram.svg" style="width:100.0%" alt="State transition diagram for the READ process." /><figcaption aria-hidden="true">State transition diagram for the READ process.</figcaption>
+</figure>
+<p>The timing diagram below shows the system waiting in state 2. In the next clock cycle, <code class="sourceCode verilog">rd</code> rises to <code class="sourceCode verilog"><span class="dv">1</span></code>. <strong>Complete the timing diagram, showing all signal values from left to right.</strong> On most browsers you can right-click on the diagram to open the image, then print it out. Draw your solution on the printout, then <strong>scan or photograph your solution and save it in your working directory as an image named <code class="sourceCode verilog">timing_solution</code></strong> (with an appropriate graphics or pdf file type).</p>
+<figure>
+<img src="figures/timing_diagram_format.svg" style="width:100.0%" alt="Timing diagram template" /><figcaption aria-hidden="true">Timing diagram template</figcaption>
+</figure>
+<h2 id="implement-the-spi-read-interface">Implement the SPI READ Interface</h2>
+<p>Create a module named <code class="sourceCode verilog">simpleSPI</code> in the <code class="sourceCode verilog">src/</code> subdirectory. It should implement the state transition diagram you analyzed in the previous exercise. You may use the code fragments in the sections below as a template.</p>
+<h3 id="module-and-signal-declarations">Module and Signal Declarations</h3>
+<p>The module should declare I/O ports for the system <code class="sourceCode verilog">clk</code> and <code class="sourceCode verilog">rst_l</code> signals, for the handshaking interface, and for the SPI interface. It should also declare signals including the alarm timer <code class="sourceCode verilog">t</code>, and counters for <code class="sourceCode verilog">t</code> and <code class="sourceCode verilog">SCLK</code>. And of course it should declare the <code class="sourceCode verilog">state</code> and <code class="sourceCode verilog">bit_index</code> vectors.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">module</span> simpleSPI</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  (</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>   <span class="dt">input</span>         clk,</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>   <span class="dt">input</span>         rst_l,</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>   <span class="co">// SPI hardware ports:</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>   <span class="dt">input</span>         SDO,</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>   <span class="dt">output</span> <span class="dt">reg</span>        CS,</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>   <span class="dt">output</span> <span class="dt">reg</span>        SCLK,</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>   <span class="co">// Application handshaking ports:</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>   <span class="dt">input</span>         rd,</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>   <span class="dt">output</span> <span class="dt">reg</span>        d_ready,</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>   <span class="dt">output</span> <span class="dt">reg</span> [<span class="dv">15</span>:<span class="dv">0</span>] d</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>   );</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>   <span class="dt">reg</span>        t;          <span class="co">// timer signal</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>   <span class="dt">reg</span>        t_rst;      <span class="co">// reset the time</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>   <span class="dt">reg</span> [<span class="dv">31</span>:<span class="dv">0</span>] t_count;    <span class="co">// timer count</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>   <span class="dt">reg</span> [<span class="dv">31</span>:<span class="dv">0</span>] sclk_count; <span class="co">// sclk count</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>   <span class="dt">reg</span> [<span class="dv">2</span>:<span class="dv">0</span>] state;</span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>   <span class="dt">reg</span> [<span class="dv">3</span>:<span class="dv">0</span>] bit_index;</span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>   <span class="co">//-----------------------------------------</span></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>   <span class="co">// Initialization</span></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>   <span class="co">//-----------------------------------------</span></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>   <span class="kw">initial</span> <span class="kw">begin</span></span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>      state      = <span class="dv">0</span>;</span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a>      t          = <span class="dv">0</span>;</span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a>      t_rst      = <span class="dv">0</span>;</span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a>      bit_index  = <span class="dv">0</span>;</span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a>      t_count    = <span class="dv">0</span>;</span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a>      sclk_count = <span class="dv">0</span>;</span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a>      SCLK         = <span class="dv">0</span>;</span>
+<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a>      CS           = <span class="dv">1</span>;</span>
+<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a>      d            = <span class="dv">0</span>;</span>
+<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a>      d_ready      = <span class="dv">0</span>;</span>
+<span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a>   <span class="kw">end</span></span>
+<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a>   <span class="co">//-----------------------------------------</span></span>
+<span id="cb2-43"><a href="#cb2-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-44"><a href="#cb2-44" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb2-45"><a href="#cb2-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-46"><a href="#cb2-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-47"><a href="#cb2-47" aria-hidden="true" tabindex="-1"></a>     </span>
+<span id="cb2-48"><a href="#cb2-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-49"><a href="#cb2-49" aria-hidden="true" tabindex="-1"></a><span class="kw">endmodule</span> <span class="co">// simpleSPI</span></span></code></pre></div>
+<h3 id="timer-and-clock-divider-processes">Timer and Clock Divider Processes</h3>
+<p>Make two processes to control the timing of <code class="sourceCode verilog">SCLK</code> and <code class="sourceCode verilog">t</code>, following these specifications:</p>
+<ul>
+<li><code class="sourceCode verilog">SCLK</code> should <strong>toggle</strong> every 25 cycles of <code class="sourceCode verilog">clk</code>.</li>
+<li><code class="sourceCode verilog">t</code> should go to <code class="sourceCode verilog"><span class="dv">0</span></code> when <code class="sourceCode verilog">t_rst</code> is high. When <code class="sourceCode verilog">t_rst</code> goes low, there should be <strong>a delay of 10 cycles of <code class="sourceCode verilog">SCLK</code> before <code class="sourceCode verilog">t</code> goes high.</strong></li>
+</ul>
+<p>These processes should be placed within the <code class="sourceCode verilog">simpleSPI</code> module.</p>
+<p>Partially completed process templates are given below.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>   <span class="co">//-----------------------------------------</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>   <span class="co">// Clock Divider for SCLK</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>   <span class="co">//-----------------------------------------</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>   <span class="kw">always</span> @(<span class="kw">posedge</span> clk, <span class="kw">negedge</span> rst_l) <span class="kw">begin</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>      <span class="kw">if</span> (!rst_l) <span class="kw">begin</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>     SCLK &lt;= <span class="dv">0</span>;</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>     sclk_count &lt;= <span class="dv">0</span>;    </span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>      <span class="kw">end</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>      <span class="kw">else</span> <span class="kw">begin</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>     <span class="co">// COMPLETE THIS CONDITION: if (*something*) begin</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Toggle SCLK</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Reset sclk_count</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>     <span class="kw">end</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>     <span class="kw">else</span> <span class="kw">begin</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Increment sclk_count </span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>     <span class="kw">end</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>      <span class="kw">end</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>   <span class="kw">end</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>   <span class="co">//-----------------------------------------</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>   <span class="co">//-----------------------------------------</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>   <span class="co">// Alarm Timer Process</span></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>   <span class="co">//-----------------------------------------</span></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>   <span class="co">// Notice the sensitivity list includes</span></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>   <span class="co">// SCLK, not clk</span></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>   <span class="kw">always</span> @(<span class="kw">posedge</span> SCLK) <span class="kw">begin</span></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>      <span class="kw">if</span> (t_rst) <span class="kw">begin</span></span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>     t       &lt;= <span class="dv">0</span>;</span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>     t_count &lt;= <span class="dv">0</span>;</span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>      <span class="kw">end</span></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>      <span class="kw">else</span> <span class="kw">begin</span></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>     <span class="co">// COMPLETE THIS CONDITION: if (*something*) begin</span></span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>        t &lt;= <span class="dv">1</span>;</span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>     <span class="kw">end</span></span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>     <span class="kw">else</span> <span class="kw">begin</span></span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Increment t_count</span></span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>     <span class="kw">end</span></span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>      <span class="kw">end</span></span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>   <span class="kw">end</span></span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>   <span class="co">//-----------------------------------------</span></span></code></pre></div>
+<h3 id="state-machine">State Machine</h3>
+<p>Lastly, implement the state transition logic using the code below as a template.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>   <span class="co">//-----------------------------------------</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>   <span class="co">// State Machine</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>   <span class="co">//-----------------------------------------</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>   <span class="kw">always</span> @(<span class="kw">posedge</span> SCLK, <span class="kw">negedge</span> rst_l) <span class="kw">begin</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>      <span class="kw">if</span> (!rst_l) <span class="kw">begin</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>     state &lt;= <span class="dv">0</span>;     </span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>      <span class="kw">end</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>      <span class="kw">else</span> <span class="kw">begin</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>     <span class="kw">case</span> (state)</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>       <span class="dv">0</span>: <span class="co">// RESET SPI BUS INTERFACE</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>         <span class="kw">begin</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>            <span class="co">// YOU DO THIS</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>         <span class="kw">end</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>       <span class="dv">1</span>: <span class="co">// INITIALIZE</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>         <span class="kw">begin</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>            <span class="co">// YOU DO THIS</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>         <span class="kw">end</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>       <span class="dv">2</span>: <span class="co">// WAIT FOR READ REQUEST</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>         <span class="kw">begin</span></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>            <span class="co">// YOU DO THIS</span></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>         <span class="kw">end</span></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>       <span class="dv">3</span>: <span class="co">// READ FROM SPI BUS</span></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>         <span class="kw">begin</span></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>            <span class="co">// YOU DO THIS</span></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>         <span class="kw">end</span></span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>       <span class="dv">4</span>: <span class="co">// WAIT FOR ACK (i.e. &#39;rd&#39; goes LOW)</span></span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>         <span class="kw">begin</span></span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>            <span class="co">// YOU DO THIS</span></span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>         <span class="kw">end</span></span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>       <span class="kw">default</span>: <span class="co">// CATCH OOPS</span></span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>         <span class="kw">begin</span></span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>        state &lt;= <span class="dv">0</span>;     </span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a>         <span class="kw">end</span></span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a>     <span class="kw">endcase</span> <span class="co">// case (state)     </span></span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a>      <span class="kw">end</span></span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a>   <span class="kw">end</span></span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a>   <span class="co">//-----------------------------------------</span></span></code></pre></div>
+<h2 id="create-a-top-module">Create a <code class="sourceCode verilog">top</code> Module</h2>
+<p>Make a <code class="sourceCode verilog">top</code> module in the <code class="sourceCode verilog">src/</code> subdirectory to implement these specifications:</p>
+<ul>
+<li>I/O ports include <code class="sourceCode verilog">clk</code>, <code class="sourceCode verilog">rst</code> (active high), the SPI signals, and 16-bit <code class="sourceCode verilog">led</code> output.</li>
+<li>Contain an instance of <code class="sourceCode verilog">simpleSPI</code>, with SPI signals passed through to the top-level I/Os (<code class="sourceCode verilog">SCLK</code>, <code class="sourceCode verilog">CS</code>, <code class="sourceCode verilog">SDO</code>)</li>
+<li>Implement the <code class="sourceCode verilog">rd</code> handshaking based on a timer process. The handshaking and timer process should be sensitive to <code class="sourceCode verilog">SCLK</code>.</li>
+<li>A <code class="sourceCode verilog"><span class="dt">parameter</span></code> named <code class="sourceCode verilog">refresh_period</code> indicates how long to wait between READ operations. The default value should be 40_000, so the sensor is read 10 times per second.</li>
+<li><strong>Invert the <code class="sourceCode verilog">rst</code> button</strong> so that the <code class="sourceCode verilog">simpleSPI</code> module receives an active-low reset signal.</li>
+</ul>
+<h2 id="simulate-the-design">Simulate the Design</h2>
+<p>Before running the simulation, open <code class="sourceCode verilog">src/testbench.v</code> and notice some new features. First, notice the parameter assignment for <code class="sourceCode verilog">top</code>:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>top #(.refresh_period(<span class="dv">2</span>)) DUT</span></code></pre></div>
+<p>For simulation purposes, it is much more efficient to shorted the <code class="sourceCode verilog">refresh_period</code> to a small number like 2 instead of 40_000. This is one of the benefits of using parameters.</p>
+<p>Next, notice an instance of a module named <code class="sourceCode verilog">sim_spi_peripheral</code>. This module is a <strong>test fixture</strong> that imitates the ALS sensor:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>  sim_spi_peripheral ALSmodel</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>     (</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>      .fid(fid),</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>      .SCLK(SCLK),</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>      .CS(CS),</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>      .SDO(SDO)</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>      );</span></code></pre></div>
+<p>In the first READ operation, the fixture sends <code class="sourceCode verilog"><span class="dv">0001111111100000</span></code> to verify the correct data positioning. In subsequent READ operations, it sends random data. In addition to the SPI signals, the module has an input port for <code class="sourceCode verilog">fid</code> so that it can write lines to <code class="sourceCode verilog">test_result.txt</code>.</p>
+<p>Next, notice that a VCD file is produced in the <code class="sourceCode verilog"><span class="kw">initial</span></code> block:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>      <span class="dt">$dumpfile</span>(<span class="st">&quot;spi.vcd&quot;</span>);</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>      <span class="co">// Dump signals in DUT with two levels of hierarchy:                                                                                          </span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>      <span class="dt">$dumpvars</span>(<span class="dv">2</span>,DUT);</span></code></pre></div>
+<p>It may be necessary to debug your design using a VCD viewer, or by running <code class="sourceCode verilog">make gui</code> to run the simulation in graphical mode. To reduce the size of the VCD file, the <code class="sourceCode verilog"><span class="dt">$dumpon</span></code> and <code class="sourceCode verilog"><span class="dt">$dumpoff</span></code> system tasks are used so that the VCD skips clock cycles when nothing is happening (otherwise the file would fill up with <code class="sourceCode verilog">clk</code> toggling millions of times).</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>      <span class="kw">if</span> (!CS || DUT.rd)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>        <span class="dt">$dumpon</span>;</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>      <span class="kw">else</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>        <span class="dt">$dumpoff</span>;</span></code></pre></div>
+<p>When you are satisfied that you understand <code class="sourceCode verilog">testbench</code> and <code class="sourceCode verilog">sim_spi_peripheral</code>, run <code class="sourceCode verilog">make</code> to perform the simulation. You should see output like this:</p>
+<pre class="text"><code> clk: 784 CS:  0 SCLK:  1 SDO:    0 led: 0000 (0000000000000000)
+ Sending 1180 (0001000110000000)
+ clk: 811 CS:  0 SCLK:  0 SDO:    0 led: 0000 (0000000000000000)
+ clk: 838 CS:  0 SCLK:  1 SDO:    0 led: 0000 (0000000000000000)
+ clk: 865 CS:  0 SCLK:  0 SDO:    0 led: 0000 (0000000000000000)
+ clk: 892 CS:  0 SCLK:  1 SDO:    0 led: 0000 (0000000000000000)
+ clk: 919 CS:  0 SCLK:  0 SDO:    0 led: 0000 (0000000000000000)
+ clk: 946 CS:  0 SCLK:  1 SDO:    0 led: 0000 (0000000000000000)
+ clk: 973 CS:  0 SCLK:  0 SDO:    1 led: 0000 (0000000000000000)
+ clk: 1000 CS:  0 SCLK:  1 SDO:    1 led: 1000 (0001000000000000)
+ clk: 1027 CS:  0 SCLK:  0 SDO:    0 led: 1000 (0001000000000000)
+ clk: 1054 CS:  0 SCLK:  1 SDO:    0 led: 1000 (0001000000000000)
+ clk: 1081 CS:  0 SCLK:  0 SDO:    0 led: 1000 (0001000000000000)
+ clk: 1108 CS:  0 SCLK:  1 SDO:    0 led: 1000 (0001000000000000)
+ clk: 1135 CS:  0 SCLK:  0 SDO:    0 led: 1000 (0001000000000000)
+ clk: 1162 CS:  0 SCLK:  1 SDO:    0 led: 1000 (0001000000000000)
+ clk: 1189 CS:  0 SCLK:  0 SDO:    1 led: 1000 (0001000000000000)
+ clk: 1216 CS:  0 SCLK:  1 SDO:    1 led: 1100 (0001000100000000)
+ clk: 1243 CS:  0 SCLK:  0 SDO:    1 led: 1100 (0001000100000000)
+ clk: 1270 CS:  0 SCLK:  1 SDO:    1 led: 1180 (0001000110000000)
+ clk: 1297 CS:  0 SCLK:  0 SDO:    0 led: 1180 (0001000110000000)
+ clk: 1324 CS:  0 SCLK:  1 SDO:    0 led: 1180 (0001000110000000)
+ </code></pre>
+<p>You can see the top-level signal transitions at every rising and falling edge of <code class="sourceCode verilog">SCLK</code>. The <code class="sourceCode verilog">sim_spi_peripheral</code> module reports the data value being sent, and you should see the same value appear on <code class="sourceCode verilog">led</code>.</p>
+<p>In GUI mode, the signals for a single READ operation look like this:</p>
+<figure>
+<img src="figures/gui_waves.png" style="width:95.0%" alt="Signal waveforms for a READ operation." /><figcaption aria-hidden="true">Signal waveforms for a READ operation.</figcaption>
+</figure>
+<p>Carefully examine the waveforms and verify that they match your expectations from the timing analysis.</p>
+<h2 id="implement-the-design">Implement the Design</h2>
+<p>Open the file <code class="sourceCode verilog">spi.xdc</code> and notice that the SPI signals are mapped to header JB:</p>
+<pre class="text"><code>##Pmod Header JB
+##Sch name = JB1 (connect to CS)
+set_property PACKAGE_PIN A14 [get_ports {CS}]                   
+    set_property IOSTANDARD LVCMOS33 [get_ports {CS}]
+##Sch name = JB2 (no connection)
+#set_property PACKAGE_PIN A16 [get_ports {JB[1]}]                   
+    #set_property IOSTANDARD LVCMOS33 [get_ports {JB[1]}]
+##Sch name = JB3 (connect to SDO)
+set_property PACKAGE_PIN B15 [get_ports {SDO}]                  
+    set_property IOSTANDARD LVCMOS33 [get_ports {SDO}]
+##Sch name = JB4 (connect to SCLK)
+set_property PACKAGE_PIN B16 [get_ports {SCLK}]                 
+    set_property IOSTANDARD LVCMOS33 [get_ports {SCLK}]</code></pre>
+<p>Locate the <code class="sourceCode verilog">JB</code> header on the Basys3 board and note the label of pin <code class="sourceCode verilog"><span class="dv">1</span></code>. Then examine the labels on the PmodALS peripheral. Starting from the top, they should read <code class="sourceCode verilog">CS</code>, <code class="sourceCode verilog">NC</code>, <code class="sourceCode verilog">SDO</code>, and <code class="sourceCode verilog">SCLK</code>. The label <code class="sourceCode verilog">NC</code> means “no connection.” Those pins match up to the <strong>top row</strong> of the double-row header on the Basys3 board. Plug the ALS peripheral into the header.</p>
+<p>Run <code class="sourceCode verilog">make implement</code> to build the design.</p>
+<h2 id="test-the-design">Test the Design</h2>
+<p>The LEDs should light up indicating the light level detected by the ALS chip. The 8-bits of ALS output will appear in the middle of the 16-bit LED output, padded by zeros on each side.</p>
+<p>On the Basys3 board, test these cases:</p>
+<ol type="1">
+<li>Shine a bright light on the sensor and try to max out the LED value to 255.</li>
+<li>Cover the sensor and try to minimize the value to 0.</li>
+</ol>
+<p>Photograph the test cases and save the photos in the working directory as <code class="sourceCode verilog">case1</code>, <code class="sourceCode verilog">case2</code>, etc. Turn in your work using <code class="sourceCode verilog">git</code>:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> add case* src/*.v *.v *.rpt *.txt *.tcl *.bit *.xdc</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> commit . -m <span class="st">&quot;Complete&quot;</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> push origin master</span></code></pre></div>
+<p>Indicate on Canvas that your assignment is done.</p>
+</body>
+</html>

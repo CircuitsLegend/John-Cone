@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Serializer and Deserializer</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../../../3700.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Serializer and Deserializer</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#serial-data-communication">Serial Data Communication</a></li>
+<li><a href="#assigned-tasks">Assigned Tasks</a>
+<ul>
+<li><a href="#implement-the-s2p-receiver-module">Implement the <code class="sourceCode verilog">S2P</code> (receiver) Module</a></li>
+<li><a href="#simulate-the-p2ss2p-interface">Simulate the <code class="sourceCode verilog">P2S</code>/<code class="sourceCode verilog">S2P</code> Interface</a></li>
+<li><a href="#create-a-top-module">Create a <code class="sourceCode verilog">top</code> Module</a></li>
+<li><a href="#implement-program-and-test">Implement, Program and Test</a></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="serial-data-communication">Serial Data Communication</h1>
+<p>There are many applications where a lot of data needs to be communicated between digital subsystems, and we want to avoid using too many wires. This is the case with a <strong>data communication bus</strong>, wherein a single group of wires is shared among many modules or subsystems.</p>
+<p>As an example, consider a serial-to-parallel (S2P) data interface, also called a “serializer”. In an S2P converter, some <code class="sourceCode verilog">N</code>-bit data needs to be communicated from a <strong>data producer</strong> to a <strong>data consumer</strong>, but only two wires are available for communicating. The two wires are called the <strong>channel select (cs)</strong> wire and the <strong>serial data (sdata)</strong> wire. The whole system is organized like this:</p>
+<figure>
+<img src="figures/system_model.svg" style="width:90.0%" alt="System model with data producer, P2S, two-wire channel, S2P, and consumer." /><figcaption aria-hidden="true">System model with data producer, P2S, two-wire channel, S2P, and consumer.</figcaption>
+</figure>
+<p>In this assignment, we will use a “dummy” producer that generates random data at random times. To coordinate with the P2S interface, the producer uses a <strong>handshaking</strong> protocol like the one we developed previously. When the P2S is not <code class="sourceCode verilog">busy</code>, the producer can raise a <code class="sourceCode verilog">send</code> signal to initiate communication. When the P2S initiates the serial transmission, it raises the <code class="sourceCode verilog">busy</code> signal.</p>
+<p>At this point the producer lowers its <code class="sourceCode verilog">send</code> request and waits for the transmission to conclude. After all <code class="sourceCode verilog">N</code> bits are transmitted, the P2S lowers the <code class="sourceCode verilog">busy</code> signal, and the channel is free to start another transmission. The signal timing for this process is shown in the figure below.</p>
+<figure>
+<img src="figures/serial_timing_diagram.svg" style="width:90.0%" alt="Signal timing for serial channel interface." /><figcaption aria-hidden="true">Signal timing for serial channel interface.</figcaption>
+</figure>
+<p>In the timing diagram, the <code class="sourceCode verilog"><span class="kw">posedge</span></code> for each <code class="sourceCode verilog">clk</code> cycle is highlighted with a faint read line. All registers are loaded at those instants (corresponding to <code class="sourceCode verilog">&lt;=</code> assignments in the Verilog code). For <code class="sourceCode verilog">N=<span class="dv">8</span></code>, a total of 11 clock cycles are needed for the transmission: 2 cycles for <code class="sourceCode verilog">send</code><span class="math inline">→</span><code class="sourceCode verilog">busy</code>,<code class="sourceCode verilog">cs</code>, then 8 cycles for the <code class="sourceCode verilog">sdata</code>, then one cycle to conclude <code class="sourceCode verilog">busy</code>,<code class="sourceCode verilog">cs</code>. The bits are transmitted one-at-a-time, <strong>LSB first</strong>, on the <code class="sourceCode verilog">sdata</code> wire. In the example above, two 8-bit sequences are transmitted: <code class="sourceCode verilog"><span class="bn">8&#39;b01010011</span></code> and <code class="sourceCode verilog"><span class="bn">8&#39;b00100111</span></code>. These match the <code class="sourceCode verilog">pdata</code> hex values <code class="sourceCode verilog"><span class="bn">8&#39;h53</span></code> and <code class="sourceCode verilog"><span class="bn">8&#39;h27</span></code>.</p>
+<p>To coordinate these activities, the P2S module needs two states:</p>
+<ul>
+<li><strong>IDLE</strong> – waiting for a transmission to begin; <code class="sourceCode verilog">busy</code> is <code class="sourceCode verilog"><span class="dv">0</span></code>. When <code class="sourceCode verilog">send</code> goes to <code class="sourceCode verilog"><span class="dv">1</span></code>, the FSM moves into the <code class="sourceCode verilog">WRITE</code> state, initializes the <code class="sourceCode verilog">bit_index</code> to <code class="sourceCode verilog"><span class="dv">0</span></code> and sets <code class="sourceCode verilog">busy</code> to <code class="sourceCode verilog"><span class="dv">1</span></code>.</li>
+<li><strong>WRITE</strong> – write one bit to the serial channel from position <code class="sourceCode verilog">bit_index</code>, and increment <code class="sourceCode verilog">bit_index</code>. If <code class="sourceCode verilog">bit_index == N</code>, then <code class="sourceCode verilog">busy</code> is set to <code class="sourceCode verilog"><span class="dv">0</span></code> and the FSM returns to the <code class="sourceCode verilog">IDLE</code> state.</li>
+</ul>
+<p>This process is visualized in the state transition graph shown below.</p>
+<figure>
+<img src="figures/p2s_state_transition_diagram.svg" style="width:75.0%" alt="State transition diagram for the P2S module." /><figcaption aria-hidden="true">State transition diagram for the P2S module.</figcaption>
+</figure>
+<p>Using the <code class="sourceCode verilog"><span class="dt">localparam</span></code> syntax, we define a P2S module as shown in the code below. The named state values, along with descriptive comments, make the code easier to understand:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">module</span> P2S</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  #(</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">parameter</span> N=<span class="dv">8</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  (</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="dt">input</span> clk,    <span class="co">// master system clock</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">input</span> rst_l,  <span class="co">// master reset (active low)</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Parallel data interface:</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    <span class="dt">input</span> [N<span class="dv">-1</span>:<span class="dv">0</span>] pdata,</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="dt">input</span>         send,</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    <span class="dt">output</span> <span class="dt">reg</span>    busy,</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Serial data interface:</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    <span class="dt">output</span> <span class="dt">reg</span> cs,     <span class="co">// channel select</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    <span class="dt">output</span> <span class="dt">reg</span> sdata,  <span class="co">// serial data</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>  );</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>  <span class="dt">reg</span>       state;</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>  <span class="dt">integer</span>   bit_index;</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>  <span class="dt">localparam</span> IDLE     = <span class="dv">0</span>;</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>  <span class="dt">localparam</span> WRITE    = <span class="dv">1</span>;</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>  <span class="kw">always</span> @(<span class="kw">posedge</span> clk, <span class="kw">negedge</span> rst_l) <span class="kw">begin</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>     <span class="kw">if</span> (!rst_l) <span class="kw">begin</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>        state &lt;= IDLE;</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>    busy  &lt;= <span class="dv">0</span>;</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>    sdata &lt;= <span class="dv">0</span>;</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>    cs    &lt;= <span class="dv">0</span>;</span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>     <span class="kw">end</span></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>     <span class="kw">else</span> <span class="kw">begin</span></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>       <span class="kw">case</span> (state)</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>         <span class="co">///////////////////////////////////////</span></span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>         <span class="dv">IDLE:</span> </span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>       <span class="kw">begin</span></span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>          bit_index &lt;= <span class="dv">0</span>;</span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>          <span class="kw">if</span> (send) <span class="kw">begin</span></span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>            busy  &lt;= <span class="dv">1</span>;</span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>        cs    &lt;= <span class="dv">1</span>;</span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>        state &lt;= WRITE;</span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>          <span class="kw">end</span></span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>       <span class="kw">end</span></span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>     <span class="co">//////////////////////////////////////</span></span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>     <span class="dv">WRITE:</span></span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>       <span class="kw">begin</span></span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>         <span class="co">// Write the next bit onto the serial channel:</span></span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a>         sdata     &lt;= pdata[bit_index];</span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a>         <span class="co">// See if we&#39;ve written all the bits:</span></span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a>         <span class="kw">if</span> (bit_index == N<span class="dv">-1</span>) <span class="kw">begin</span></span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a>           cs    &lt;= <span class="dv">0</span>;</span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a>           state &lt;= IDLE;</span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a>           busy  &lt;= <span class="dv">0</span>;</span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a>         <span class="kw">end</span></span>
+<span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a>         <span class="co">// Else increment the bit index and keep writing:</span></span>
+<span id="cb1-57"><a href="#cb1-57" aria-hidden="true" tabindex="-1"></a>         <span class="kw">else</span> <span class="kw">begin</span></span>
+<span id="cb1-58"><a href="#cb1-58" aria-hidden="true" tabindex="-1"></a>           bit_index &lt;= bit_index + <span class="dv">1</span>;</span>
+<span id="cb1-59"><a href="#cb1-59" aria-hidden="true" tabindex="-1"></a>         <span class="kw">end</span></span>
+<span id="cb1-60"><a href="#cb1-60" aria-hidden="true" tabindex="-1"></a>       <span class="kw">end</span></span>
+<span id="cb1-61"><a href="#cb1-61" aria-hidden="true" tabindex="-1"></a>     <span class="co">/////////////////////////////////////</span></span>
+<span id="cb1-62"><a href="#cb1-62" aria-hidden="true" tabindex="-1"></a>       <span class="kw">endcase</span></span>
+<span id="cb1-63"><a href="#cb1-63" aria-hidden="true" tabindex="-1"></a>     <span class="kw">end</span></span>
+<span id="cb1-64"><a href="#cb1-64" aria-hidden="true" tabindex="-1"></a>  <span class="kw">end</span></span>
+<span id="cb1-65"><a href="#cb1-65" aria-hidden="true" tabindex="-1"></a><span class="kw">endmodule</span></span></code></pre></div>
+<h1 id="assigned-tasks">Assigned Tasks</h1>
+<h2 id="implement-the-s2p-receiver-module">Implement the <code class="sourceCode verilog">S2P</code> (receiver) Module</h2>
+<p>Using the <code class="sourceCode verilog">P2S</code> module as a template, implement the <code class="sourceCode verilog">S2P</code> module based on this state transition diagram:</p>
+<figure>
+<img src="figures/state_transition_diagram.svg" style="width:80.0%" alt="State transition diagram for the S2P module." /><figcaption aria-hidden="true">State transition diagram for the <code class="sourceCode verilog">S2P</code> module.</figcaption>
+</figure>
+<h2 id="simulate-the-p2ss2p-interface">Simulate the <code class="sourceCode verilog">P2S</code>/<code class="sourceCode verilog">S2P</code> Interface</h2>
+<p>Open the files <code class="sourceCode verilog">src/testbench.v</code>, <code class="sourceCode verilog">src/producer.v</code> and <code class="sourceCode verilog">src/consumer.v</code>. Study them line-by-line to ensure you understand how they are being used. The <code class="sourceCode verilog">producer</code> uses a <strong>random delay timer</strong> to simulate a digital subsystem:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>   <span class="dt">reg</span> [<span class="dv">1</span>:<span class="dv">0</span>] r;</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>   <span class="kw">always</span> @(<span class="kw">posedge</span> clk) <span class="kw">begin</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>      r &lt;= <span class="dt">$random</span>();</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>      <span class="kw">if</span> (r == <span class="dv">0</span>) <span class="kw">begin</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>         <span class="co">// random event goes here </span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>      <span class="kw">end</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>   <span class="kw">end</span></span></code></pre></div>
+<p>In this code fragment, <code class="sourceCode verilog">r</code> is declared as a 2-bit vector, giving it <strong>4 possible values</strong>. At each clock cycle, it gets assigned a random value. <strong>The probability that <code class="sourceCode verilog">r==<span class="dv">0</span></code> is 1/4.</strong> On average, there should be a delay of 4 clock cycles between events, but it could be longer or shorter, because it’s random.</p>
+<p>The <code class="sourceCode verilog">producer</code> also contains some simple conditional logic to do the handshaking with <code class="sourceCode verilog">P2S</code>. You may also notice that the <code class="sourceCode verilog">producer</code> uses the <code class="sourceCode verilog"><span class="dt">$strobe</span></code> system task to output data to the console. The <code class="sourceCode verilog"><span class="dt">$strobe</span></code> task is similar to the <code class="sourceCode verilog"><span class="dt">$display</span></code> or <code class="sourceCode verilog"><span class="dt">$write</span></code> tasks, except <code class="sourceCode verilog"><span class="dt">$strobe</span></code> prints signal values <strong>after the nonblocking assignments are completed</strong>. In other words, <code class="sourceCode verilog"><span class="dt">$write</span></code> prints register values just prior to the clock edge, and <code class="sourceCode verilog"><span class="dt">$strobe</span></code> prints their values just after the clock edge.</p>
+<p>The <code class="sourceCode verilog">testbench</code> itself has a typical organization. It instantiates the <code class="sourceCode verilog">producer</code>, <code class="sourceCode verilog">consumer</code>, <code class="sourceCode verilog">P2S</code> and <code class="sourceCode verilog">S2P</code> modules. At every clock cycle, it prints the bus and handshaking signals, and the <code class="sourceCode verilog">S2P</code> states. The output should look like this:</p>
+<pre class="text"><code>clk:   0 send:  0 busy:  0 cs:    0 sdata: 0 ready:  0 ack:  0 S2P[state 0, bit_index x]
+clk:   1 send:  0 busy:  0 cs:    0 sdata: 0 ready:  0 ack:  0 S2P[state 0, bit_index x]
+clk:   2 send:  0 busy:  0 cs:    0 sdata: 0 ready:  0 ack:  0 S2P[state 0, bit_index 0]
+clk:   3 send:  0 busy:  0 cs:    0 sdata: 0 ready:  0 ack:  0 S2P[state 0, bit_index 0]
+clk:   4 send:  0 busy:  0 cs:    0 sdata: 0 ready:  0 ack:  0 S2P[state 0, bit_index 0]
+clk:   5 send:  0 busy:  0 cs:    0 sdata: 0 ready:  0 ack:  0 S2P[state 0, bit_index 0]
+clk:   6 send:  0 busy:  0 cs:    0 sdata: 0 ready:  0 ack:  0 S2P[state 0, bit_index 0]
+clk:   7 send:  0 busy:  0 cs:    0 sdata: 0 ready:  0 ack:  0 S2P[state 0, bit_index 0]
+clk:   8 send:  0 busy:  0 cs:    0 sdata: 0 ready:  0 ack:  0 S2P[state 0, bit_index 0]
+clk:   9 send:  0 busy:  0 cs:    0 sdata: 0 ready:  0 ack:  0 S2P[state 0, bit_index 0]
+clk:  10 send:  0 busy:  0 cs:    0 sdata: 0 ready:  0 ack:  0 S2P[state 0, bit_index 0]
+clk:  11 send:  0 busy:  0 cs:    0 sdata: 0 ready:  0 ack:  0 S2P[state 0, bit_index 0]
+clk:  12 send:  0 busy:  0 cs:    0 sdata: 0 ready:  0 ack:  0 S2P[state 0, bit_index 0]
+clk:  13 send:  0 busy:  0 cs:    0 sdata: 0 ready:  0 ack:  0 S2P[state 0, bit_index 0]
+Sending c6(11000110)
+clk:  14 send:  1 busy:  0 cs:    0 sdata: 0 ready:  0 ack:  0 S2P[state 0, bit_index 0]
+clk:  15 send:  1 busy:  1 cs:    1 sdata: 0 ready:  0 ack:  0 S2P[state 0, bit_index 0]
+clk:  16 send:  0 busy:  1 cs:    1 sdata: 0 ready:  0 ack:  0 S2P[state 1, bit_index 0]
+clk:  17 send:  0 busy:  1 cs:    1 sdata: 1 ready:  0 ack:  0 S2P[state 1, bit_index 1]
+clk:  18 send:  0 busy:  1 cs:    1 sdata: 1 ready:  0 ack:  0 S2P[state 1, bit_index 2]
+clk:  19 send:  0 busy:  1 cs:    1 sdata: 0 ready:  0 ack:  0 S2P[state 1, bit_index 3]
+clk:  20 send:  0 busy:  1 cs:    1 sdata: 0 ready:  0 ack:  0 S2P[state 1, bit_index 4]
+clk:  21 send:  0 busy:  1 cs:    1 sdata: 0 ready:  0 ack:  0 S2P[state 1, bit_index 5]
+clk:  22 send:  0 busy:  1 cs:    1 sdata: 1 ready:  0 ack:  0 S2P[state 1, bit_index 6]
+clk:  23 send:  0 busy:  1 cs:    0 sdata: 1 ready:  0 ack:  0 S2P[state 1, bit_index 7]
+clk:  24 send:  0 busy:  0 cs:    0 sdata: 1 ready:  1 ack:  0 S2P[state 2, bit_index 7]
+Received c6(11000110)
+clk:  25 send:  0 busy:  0 cs:    0 sdata: 1 ready:  1 ack:  1 S2P[state 2, bit_index 7]
+Sending 2d(00101101)
+clk:  26 send:  1 busy:  0 cs:    0 sdata: 1 ready:  0 ack:  0 S2P[state 0, bit_index 7]
+clk:  27 send:  1 busy:  1 cs:    1 sdata: 1 ready:  0 ack:  0 S2P[state 0, bit_index 0]
+clk:  28 send:  0 busy:  1 cs:    1 sdata: 1 ready:  0 ack:  0 S2P[state 1, bit_index 0]
+clk:  29 send:  0 busy:  1 cs:    1 sdata: 0 ready:  0 ack:  0 S2P[state 1, bit_index 1]
+clk:  30 send:  0 busy:  1 cs:    1 sdata: 1 ready:  0 ack:  0 S2P[state 1, bit_index 2]
+clk:  31 send:  0 busy:  1 cs:    1 sdata: 1 ready:  0 ack:  0 S2P[state 1, bit_index 3]
+clk:  32 send:  0 busy:  1 cs:    1 sdata: 0 ready:  0 ack:  0 S2P[state 1, bit_index 4]
+clk:  33 send:  0 busy:  1 cs:    1 sdata: 1 ready:  0 ack:  0 S2P[state 1, bit_index 5]
+clk:  34 send:  0 busy:  1 cs:    1 sdata: 0 ready:  0 ack:  0 S2P[state 1, bit_index 6]
+clk:  35 send:  0 busy:  1 cs:    0 sdata: 0 ready:  0 ack:  0 S2P[state 1, bit_index 7]
+clk:  36 send:  0 busy:  0 cs:    0 sdata: 0 ready:  1 ack:  0 S2P[state 2, bit_index 7]
+Received 2d(00101101)</code></pre>
+<p>Notice that the channel sits idle for several lines until a transmission starts, then the interface becomes active for 13 lines (11 clock cycles), then returns to its idle state. If the design is correct, the <code class="sourceCode verilog">producer</code> and <code class="sourceCode verilog">consumer</code> should report the same data values.</p>
+<h2 id="create-a-top-module">Create a <code class="sourceCode verilog">top</code> Module</h2>
+<p>Next, to prepare for a physical test, create a <code class="sourceCode verilog">top</code> module to interconnect the <code class="sourceCode verilog">P2S</code>, <code class="sourceCode verilog">S2P</code>, and <code class="sourceCode verilog">debouncer</code> modules. Copy the <code class="sourceCode verilog">Basys3_Master.xdc</code> template into a new constraint file named <code class="sourceCode verilog">serial_interface.xdc</code>.</p>
+<p>The <code class="sourceCode verilog">top</code> module should have these ports and XDC assignments:</p>
+<ul>
+<li><code class="sourceCode verilog">clk</code></li>
+<li><code class="sourceCode verilog">rst</code> – map to <code class="sourceCode verilog">btnC</code></li>
+<li><code class="sourceCode verilog">btn_send</code> – map to <code class="sourceCode verilog">btnU</code></li>
+<li><code class="sourceCode verilog">btn_ack</code> – map to <code class="sourceCode verilog">btnL</code></li>
+<li><code class="sourceCode verilog">pdata_in</code> – map to <code class="sourceCode verilog">sw[<span class="dv">0</span>]</code> through <code class="sourceCode verilog">sw[<span class="dv">7</span>]</code></li>
+<li><code class="sourceCode verilog">pdata_out</code> – map to <code class="sourceCode verilog">led[<span class="dv">0</span>]</code> through <code class="sourceCode verilog">led[<span class="dv">7</span>]</code></li>
+<li><code class="sourceCode verilog">busy</code> – map to <code class="sourceCode verilog">led[<span class="dv">15</span>]</code></li>
+<li><code class="sourceCode verilog">ready</code> – map to <code class="sourceCode verilog">led[<span class="dv">14</span>]</code></li>
+</ul>
+<p>Also create wires to interconnect your submodules:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>   <span class="dt">wire</span>     rst_l;</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>   <span class="dt">wire</span>     cs;</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>   <span class="dt">wire</span>     sdata;</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>   <span class="dt">wire</span>     send;</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>   <span class="dt">wire</span>     ack;</span></code></pre></div>
+<p>Use two instances of your <code class="sourceCode verilog">debouncer</code> module with these connections:</p>
+<ul>
+<li><code class="sourceCode verilog">debouncer</code> instance named <code class="sourceCode verilog">db_send</code>
+<ul>
+<li>Connect port <code class="sourceCode verilog">btn</code> to wire <code class="sourceCode verilog">btn_send</code></li>
+<li>Connect port <code class="sourceCode verilog">btn_db</code> to wire <code class="sourceCode verilog">send</code></li>
+</ul></li>
+<li><code class="sourceCode verilog">debouncer</code> instance named <code class="sourceCode verilog">db_ack</code>
+<ul>
+<li>Connect port <code class="sourceCode verilog">btn</code> to wire <code class="sourceCode verilog">btn_ack</code></li>
+<li>Connect port <code class="sourceCode verilog">btn_db</code> to wire <code class="sourceCode verilog">ack</code></li>
+</ul></li>
+</ul>
+<p>You will need to copy your source code including <code class="sourceCode verilog">debouncer.v</code> and <code class="sourceCode verilog">tcounter.v</code> into this assignment’s <code class="sourceCode verilog">src/</code> subdirectory.</p>
+<h2 id="implement-program-and-test">Implement, Program and Test</h2>
+<p>After creating the necessary <code class="sourceCode verilog">top</code> module and <code class="sourceCode verilog">xdc</code> assignments, and after copying the code for <code class="sourceCode verilog">debouncer</code> and <code class="sourceCode verilog">tcounter</code> into your <code class="sourceCode verilog">src/</code> directory, run <code class="sourceCode verilog">make implement</code> to synthesize, implement and generate a bitstream.</p>
+<p>Program your Basys3 board with the resulting bitstream file, and test the following cases:</p>
+<ol type="1">
+<li>Set switches to <code class="sourceCode verilog"><span class="bn">8&#39;b01101001</span></code>; press <code class="sourceCode verilog">btnU</code> (send) but NOT <code class="sourceCode verilog">btnL</code> (ack). I want to see the <code class="sourceCode verilog">ready</code> light.</li>
+<li>Set switches to <code class="sourceCode verilog"><span class="bn">8&#39;b10000111</span></code>; press <code class="sourceCode verilog">btnU</code> (send) and then <code class="sourceCode verilog">btnL</code> (ack). The <code class="sourceCode verilog">ready</code> light should turn off.</li>
+</ol>
+<p>If your design works properly, the <code class="sourceCode verilog">busy</code> light will flicker so fast that you won’t be able to see it.</p>
+<p>Photograph the test cases and save the photos in the working directory as <code class="sourceCode verilog">case1</code> and <code class="sourceCode verilog">case2</code>, with an appropriate graphics filename suffix.</p>
+<p>Turn in your work using <code class="sourceCode verilog">git</code>:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> add case* src/*.v *.v *.rpt *.txt *.tcl *.bit *.xdc</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> commit . -m <span class="st">&quot;Complete&quot;</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> push origin master</span></code></pre></div>
+<p>Indicate on Canvas that your assignment is done.</p>
+</body>
+</html>

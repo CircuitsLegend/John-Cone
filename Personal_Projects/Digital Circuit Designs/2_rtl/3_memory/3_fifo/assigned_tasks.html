@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>FIFOs, LIFOs, Queues and Stacks</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../../../3700.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">FIFOs, LIFOs, Queues and Stacks</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#fifo-asynchronous-communication">FIFO: Asynchronous Communication</a>
+<ul>
+<li><a href="#queues">Queues</a></li>
+<li><a href="#fifo-handshaking">FIFO handshaking</a></li>
+</ul></li>
+<li><a href="#fifo-handshaking-1">FIFO handshaking</a></li>
+<li><a href="#fifo-design">FIFO Design</a>
+<ul>
+<li><a href="#fifo-in-verilog">FIFO in Verilog</a>
+<ul>
+<li><a href="#handshaking-state-machine-transmit-side">Handshaking State Machine: Transmit Side</a></li>
+<li><a href="#handshaking-state-machine-receive-side">Handshaking State Machine: Receive Side</a></li>
+<li><a href="#buffer-array">Buffer Array</a></li>
+</ul></li>
+<li><a href="#buffer-manager">Buffer Manager</a>
+<ul>
+<li><a href="#circular-buffering">Circular Buffering</a></li>
+<li><a href="#implementing-the-buffer-and-manager-signals">Implementing the Buffer and Manager: Signals</a></li>
+<li><a href="#implementing-the-buffer-and-manager-initialization">Implementing the Buffer and Manager: Initialization</a></li>
+<li><a href="#implementing-the-buffer-and-manager-adding-data">Implementing the Buffer and Manager: Adding Data</a></li>
+<li><a href="#implementing-the-buffer-and-manager-removing-data">Implementing the Buffer and Manager: Removing Data</a></li>
+<li><a href="#implementing-the-buffer-and-manager-add-and-remove-data">Implementing the Buffer and Manager: Add and Remove Data</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#assigned-tasks">Assigned Tasks</a>
+<ul>
+<li><a href="#make-a-fifo">Make a FIFO</a></li>
+<li><a href="#testbench-output-for-fifo">Testbench Output for FIFO</a></li>
+<li><a href="#turn-in-the-testbench-output">Turn in the Testbench Output</a></li>
+<li><a href="#make-a-lifo-stack">Make a LIFO Stack</a></li>
+<li><a href="#testbench-output-for-lifo">Testbench Output for LIFO</a></li>
+<li><a href="#design-task-fifo-application">Design Task: FIFO Application</a></li>
+<li><a href="#optional-design-task-stack-application">OPTIONAL Design Task: Stack Application</a></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="fifo-asynchronous-communication">FIFO: Asynchronous Communication</h1>
+<p>A “FIFO” is a <strong>First-In First-Out</strong> memory buffer, basically a type of queue. It’s main application is to interface between devices that process data at varying rates. Rather than synchronize the devices, a FIFO is used to hold data from one device until the other device is ready to deal with it.</p>
+<p>Consider a scenario where a user types some text on a keyboard, and it is transmitted via UART to another device or system. Some important considerations:</p>
+<ul>
+<li>The system clock is much faster than the UART rate, and the UART rate is much faster than the keyboard entry rate.</li>
+</ul>
+<p><img src="figures/uart_system.png" /></p>
+<ul>
+<li>The string is not sent until the user presses enter, so the Top module has to assemble a complete string, then send all the characters through the UART.</li>
+</ul>
+<p><img src="figures/uart_string_transmit.png" /></p>
+<h2 id="queues">Queues</h2>
+<p>A Queue is a solution for <strong>synchronizing</strong> between processes that run at different speeds.</p>
+<p>In the abstract, we consider a <strong>transmitter</strong> T and a <strong>receiver</strong> R. When T has some data, it should send it to R, but first it needs to make sure that R is ready. On the other side, when R is ready to receive data, it needs to verify that T actually has some data available.</p>
+<p>The queue brokers this transaction by providing a small amount of memory. <strong>T can write into the queue at any time, and R can read from the queue at any time.</strong></p>
+<p>The most common type of queue is the <strong>First-In, First-Out (FIFO)</strong> protocol, where each item waits its turn to be processed in the order of arrival. By using FIFOs, each module in a system can have a standardized FIFO interface, and all timing complexities are handled by the FIFO instead of the individual modules.</p>
+<p>A second type of queue is the <strong>Last-In, First-Out (LIFO)</strong> protocol, also known as a <strong>stack</strong>. Stacks are commonly used as a memory resource for building algorithms. FIFOs are also sometimes useful for building algorithms in addition to process synchronization.</p>
+<h2 id="fifo-handshaking">FIFO handshaking</h2>
+<p>Most of the time, a FIFO connection sits idle, waiting for events to happen.</p>
+<p><img src="figures/fifo_token.png" /></p>
+<h1 id="fifo-handshaking-1">FIFO handshaking</h1>
+<p>At a random time, T has some data. T checks to make sure the FIFO is <strong>not full</strong>, and notifies the FIFO that data is <strong>ready</strong>. This process of requests and notifications is called <strong>handshaking</strong>.</p>
+<p><img src="figures/fifo_token_tx_1.png" /></p>
+<p>The FIFO stores the data, and notifies T that it is <strong>finished</strong>. T concludes the transaction.</p>
+<p><img src="figures/fifo_token_tx_2.png" /></p>
+<p>At another random time, T has more data, and repeats the request.</p>
+<p><img src="figures/fifo_token_3.png" /></p>
+<p>The FIFO loads the new data, placing it behind the earlier data in the queue.</p>
+<p><img src="figures/fifo_token_tx_4.png" /></p>
+<p>Then the channel goes idle, waiting for more events.</p>
+<p><img src="figures/fifo_token_tx_5.png" /></p>
+<p>At some random time, R is ready to handle data. R notifies the FIFO that it is <strong>ready</strong>, and the FIFO indicates that it is <strong>not empty</strong>.</p>
+<p><img src="figures/fifo_token_tx_6.png" /></p>
+<p>The FIFO delivers the data. R consumes the data. When R is finished, it notifies the FIFO that it is <strong>ready</strong> again, and the FIFO indicates that it is <strong>not empty</strong>.</p>
+<p><img src="figures/fifo_token_tx_7.png" /></p>
+<p>The FIFO delivers the last data. R consumes the data. When R is finished, it notifies the FIFO that it is <strong>ready</strong> again, and the FIFO indicates that it is <strong>empty</strong>, so the transaction is done. The channel will go idle again.</p>
+<p><img src="figures/fifo_token_tx_8.png" /></p>
+<h1 id="fifo-design">FIFO Design</h1>
+<p>The FIFO represents three subsystems:</p>
+<ol type="1">
+<li>Transmit (input) handshaking</li>
+<li>Receive (output) handshaking</li>
+<li>Buffer manager</li>
+</ol>
+<p>During any particular clock cycle, the FIFO can accept data (<code class="sourceCode verilog">tx_rdy</code>), deliver data (<code class="sourceCode verilog">rx_done</code>), or do both simultaneously. The FIFO contains an array called the <strong>buffer</strong>, which stores data in between the read and write events.</p>
+<p>A <strong>buffer manager</strong> process is necessary to coordinate incoming and outgoing data, and keep track of their locations within an internal array.</p>
+<h2 id="fifo-in-verilog">FIFO in Verilog</h2>
+<p>A FIFO module needs two interfaces, one for the <strong>transmitter</strong> and one for the <strong>receiver</strong>. It also needs signals to indicate if the FIFO is <strong>empty</strong> or <strong>full</strong>.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">module</span> fifo<span class="op">(</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>   <span class="dt">input</span>      clk<span class="op">,</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>   <span class="co">// Transmit Interface</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>   <span class="dt">input</span>             tx_rdy<span class="op">,</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>   <span class="dt">output</span> <span class="dt">reg</span>        tx_done<span class="op">,</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>   <span class="dt">input</span> <span class="op">[</span>WIDTH<span class="dv">-1</span><span class="op">:</span><span class="dv">0</span><span class="op">]</span> in_data<span class="op">,</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>   <span class="co">// Receive Interface</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>   <span class="dt">output</span> <span class="dt">reg</span>             rx_rdy<span class="op">,</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>   <span class="dt">input</span>                  rx_done<span class="op">,</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>   <span class="dt">output</span> <span class="dt">reg</span> <span class="op">[</span>WIDTH<span class="dv">-1</span><span class="op">:</span><span class="dv">0</span><span class="op">]</span> out_data<span class="op">,</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>   <span class="co">// Indicators</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>   <span class="dt">output</span> <span class="dt">reg</span> empty<span class="op">,</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>   <span class="dt">output</span> <span class="dt">reg</span> full</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="op">);</span></span></code></pre></div>
+<h3 id="handshaking-state-machine-transmit-side">Handshaking State Machine: Transmit Side</h3>
+<p>The system begins in state 0, waiting for a <code class="sourceCode verilog">tx_rdy</code> event. If the event happens, and the buffer isn’t full, an <code class="sourceCode verilog">incr</code> signal is sent to the buffer manager, telling it to load data into the buffer. The <code class="sourceCode verilog">incr</code> signal should last only one cycle, so it is set back to 0 in subsequent transitions.</p>
+<p><img src="figures/tx_state_machine.png" /></p>
+<h3 id="handshaking-state-machine-receive-side">Handshaking State Machine: Receive Side</h3>
+<p>On the receiving (output) side, we begin in state zero, corresponding too an <code class="sourceCode verilog">empty</code> buffer. Once the buffer is non-empty, it loads the oldest data into <code class="sourceCode verilog">out_data</code> and waits in state 1. When an <code class="sourceCode verilog">rx_done</code> signal is received, it generates a <code class="sourceCode verilog">decr</code> pulse to notify the buffer manager that data is removed.</p>
+<p><img src="figures/rx_state_machine.png" /></p>
+<h3 id="buffer-array">Buffer Array</h3>
+<p>An <strong>array</strong> in Verilog is similar to an array in C. The elements of the array are <strong>words</strong>, and each word has a specifiable <code class="sourceCode verilog">WIDTH</code>, and the number of elements in the array is called the <code class="sourceCode verilog">DEPTH</code>. A Verilog array declaration looks like this:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="dt">reg</span>  <span class="op">[</span>WIDTH<span class="dv">-1</span><span class="op">:</span><span class="dv">0</span><span class="op">]</span> buffer <span class="op">[</span>DEPTH<span class="dv">-1</span><span class="op">:</span><span class="dv">0</span><span class="op">];</span>  </span></code></pre></div>
+<figure>
+<img src="figures/buffer_array.png" alt="Buffer array." /><figcaption aria-hidden="true">Buffer array.</figcaption>
+</figure>
+<p>The words of the array can addressed using C-style indexing, like this:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="dt">parameter</span> WIDTH     <span class="op">=</span> <span class="dv">8</span><span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="dt">parameter</span> ADR_WIDTH <span class="op">=</span> <span class="dv">3</span><span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="dt">output</span> <span class="dt">reg</span> <span class="op">[</span>WIDTH<span class="dv">-1</span><span class="op">:</span><span class="dv">0</span><span class="op">]</span> out_data             <span class="op">;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="dt">reg</span>        <span class="op">[</span>WIDTH<span class="dv">-1</span><span class="op">:</span><span class="dv">0</span><span class="op">]</span> buffer   <span class="op">[</span>DEPTH<span class="dv">-1</span><span class="op">:</span><span class="dv">0</span><span class="op">]</span> <span class="op">;</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="dt">reg</span>        <span class="op">[</span>ADR_WIDTH<span class="dv">-1</span><span class="op">:</span><span class="dv">0</span><span class="op">]</span> index            <span class="op">;</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="co">// ... later in the code ...</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>out_data <span class="op">&lt;=</span> buffer<span class="op">[</span>index<span class="op">];</span></span></code></pre></div>
+<p>Note that the <code class="sourceCode verilog">index</code> signal is used to select elements from the array, so <code class="sourceCode verilog">ADR_WIDTH</code> needs to be big enough to count up to the highest array position.</p>
+<h2 id="buffer-manager">Buffer Manager</h2>
+<p>The buffer manager process has two jobs:</p>
+<ul>
+<li>Keep track of the newest/oldest data positions in the buffer</li>
+<li>Detect if the buffer is full or empty</li>
+</ul>
+<h3 id="circular-buffering">Circular Buffering</h3>
+<p>Since the FIFO means “first-in, first-out”, new data is always placed in the “back” of the buffer. When data is retrieved from the FIFO, it should come from the “front”. Since these events happen at random times, we use movable indices to keep track of the front/back positions.</p>
+<p>As an example, consider a buffer with DEPTH=5. Initially, the buffer is <strong>empty</strong> with <code class="sourceCode verilog">front<span class="op">=</span>back<span class="op">=</span><span class="dv">0</span></code>.</p>
+<p><img src="figures/circular_buffer_empty.png" /></p>
+<p>Next, some data is input to the FIFO. It is loaded into the <code class="sourceCode verilog">front</code> position, then <code class="sourceCode verilog">front</code> is incremented while <code class="sourceCode verilog">back</code> stays at 0, pointing to the data. The buffer is no longer empty.</p>
+<p><img src="figures/circular_buffer_1.png" /></p>
+<p>When data is successively pushed into the FIFO, it is placed at the <code class="sourceCode verilog">front</code> position and <code class="sourceCode verilog">front</code> is incremented each time.</p>
+<p><img src="figures/circular_buffer_2.png" /></p>
+<p>Here comes some more data.</p>
+<p><img src="figures/circular_buffer_3.png" /></p>
+<p>When data is pulled out from the FIFO, it comes from the <code class="sourceCode verilog">back</code>, since that is where the “first” (i.e. oldest) data is located. The data item is written to the output interface, and <code class="sourceCode verilog">back</code> is incremented. The old data is still present at array position 0, but is now considered <strong>stale</strong> (indicated by the gray color).</p>
+<p><img src="figures/circular_buffer_4.png" /></p>
+<p>As more data arrives in the buffer, the “active” portion of the buffer rotates clockwise, with <code class="sourceCode verilog">front</code> and <code class="sourceCode verilog">back</code> incrementing in response to each access event.</p>
+<p><img src="figures/circular_buffer_5.png" /></p>
+<p>Eventually, <code class="sourceCode verilog">front</code> reaches the highest array index. When this happens, we can still add more data if <code class="sourceCode verilog">front</code> is “rolled over” to index zero.</p>
+<p><img src="figures/circular_buffer_6.png" /></p>
+<p>When new data arrives, it over-writes the stale data at index 0. Now the buffer is full. No more data can be added until some is removed. In order to detect that the buffer is full, we need to maintain a <code class="sourceCode verilog">count</code> register. When <code class="sourceCode verilog">count<span class="op">=</span>DEPTH</code>, the buffer is full. When <code class="sourceCode verilog">count<span class="op">=</span><span class="dv">0</span></code>, the buffer is empty.</p>
+<p><img src="figures/circular_buffer_7.png" /></p>
+<p>Next, some data is pulled out from the <code class="sourceCode verilog">back</code> of the buffer, and <code class="sourceCode verilog">back</code> is incremented. The buffer is no longer full.</p>
+<p><img src="figures/circular_buffer_8.png" /></p>
+<p>As data is removed, <code class="sourceCode verilog">back</code> is repeatedly incremented. Once <code class="sourceCode verilog">back</code> crosses index 4, it will need to “roll over” to index 0, as we did with <code class="sourceCode verilog">front</code>.</p>
+<p><img src="figures/circular_buffer_9.png" /></p>
+<h3 id="implementing-the-buffer-and-manager-signals">Implementing the Buffer and Manager: Signals</h3>
+<p>At minimum, we will need the signal declarations shown below.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="dt">input</span>      <span class="op">[</span>WIDTH<span class="dv">-1</span><span class="op">:</span><span class="dv">0</span><span class="op">]</span> in_data<span class="op">;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="dt">output</span> <span class="dt">reg</span> <span class="op">[</span>WIDTH<span class="dv">-1</span><span class="op">:</span><span class="dv">0</span><span class="op">]</span> out_data<span class="op">;</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="dt">output</span> <span class="dt">reg</span>    empty<span class="op">;</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="dt">output</span> <span class="dt">reg</span>    full<span class="op">;</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="co">// These signals are generated by the handshaking processes:</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="dt">reg</span>           incr<span class="op">;</span> <span class="co">// Add new data into the buffer</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="dt">reg</span>           decr<span class="op">;</span> <span class="co">// Pull old data from the buffer</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="co">// Here are the buffer components:</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="dt">reg</span>   <span class="op">[</span>WIDTH<span class="dv">-1</span><span class="op">:</span><span class="dv">0</span><span class="op">]</span>     buffer <span class="op">[</span>DEPTH<span class="dv">-1</span><span class="op">:</span><span class="dv">0</span><span class="op">]</span> <span class="op">;</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="dt">reg</span>   <span class="op">[</span>ADR_WIDTH<span class="dv">-1</span><span class="op">:</span><span class="dv">0</span><span class="op">]</span> front<span class="op">;</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="dt">reg</span>   <span class="op">[</span>ADR_WIDTH<span class="dv">-1</span><span class="op">:</span><span class="dv">0</span><span class="op">]</span> back<span class="op">;</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="dt">reg</span>   <span class="op">[</span>ADR_WIDTH<span class="dv">-1</span><span class="op">:</span><span class="dv">0</span><span class="op">]</span> count<span class="op">;</span></span></code></pre></div>
+<h3 id="implementing-the-buffer-and-manager-initialization">Implementing the Buffer and Manager: Initialization</h3>
+<div class="sourceCode" id="cb5"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">initial</span> <span class="kw">begin</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  incr     <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  decr     <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  front    <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  back     <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  count    <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  empty    <span class="op">=</span> <span class="dv">1</span><span class="op">;</span>  <span class="co">// Presumably we start empty</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  full     <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  out_data <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code></pre></div>
+<h3 id="implementing-the-buffer-and-manager-adding-data">Implementing the Buffer and Manager: Adding Data</h3>
+<div class="sourceCode" id="cb6"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">always</span> <span class="op">@(</span><span class="kw">posedge</span> clk<span class="op">)</span> <span class="kw">begin</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Add data</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">if</span> <span class="op">(</span>incr <span class="op">&amp;&amp;</span> <span class="op">!</span>decr <span class="op">&amp;&amp;</span> <span class="op">!</span>full<span class="op">)</span> <span class="kw">begin</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    buffer<span class="op">[</span>front<span class="op">]</span> <span class="op">&lt;=</span> in_data<span class="op">;</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Update count, detect full/empty</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    count         <span class="op">&lt;=</span> count <span class="op">+</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    empty         <span class="op">&lt;=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">if</span> <span class="op">(</span>count <span class="op">==</span> DEPTH<span class="dv">-1</span><span class="op">)</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>      full <span class="op">&lt;=</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">if</span> <span class="op">(</span>front <span class="op">&lt;</span> DEPTH<span class="dv">-1</span><span class="op">)</span> </span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>      front <span class="op">&lt;=</span> front <span class="op">+</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    <span class="kw">else</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>      front <span class="op">&lt;=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>  <span class="kw">end</span>   </span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>  <span class="co">// ... continued ...</span></span></code></pre></div>
+<h3 id="implementing-the-buffer-and-manager-removing-data">Implementing the Buffer and Manager: Removing Data</h3>
+<p>Within the same always block…</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Remove data</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">else</span> <span class="kw">if</span> <span class="op">(!</span>incr <span class="op">&amp;&amp;</span> decr <span class="op">&amp;&amp;</span> <span class="op">!</span>empty<span class="op">)</span> <span class="kw">begin</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    out_data <span class="op">&lt;=</span> buffer<span class="op">[</span>back<span class="op">];</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Update count, detect full/empty</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    count    <span class="op">&lt;=</span> count <span class="op">-</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    full     <span class="op">&lt;=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">if</span> <span class="op">(</span>count <span class="op">==</span> <span class="dv">1</span><span class="op">)</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>      empty <span class="op">&lt;=</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">if</span> <span class="op">(</span>back <span class="op">&lt;</span> DEPTH<span class="dv">-1</span><span class="op">)</span> </span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>      back <span class="op">&lt;=</span> back <span class="op">+</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    <span class="kw">else</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>      back <span class="op">&lt;=</span> <span class="dv">0</span><span class="op">;</span>    </span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>  <span class="kw">end</span></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a><span class="co">//... continued ...</span></span></code></pre></div>
+<h3 id="implementing-the-buffer-and-manager-add-and-remove-data">Implementing the Buffer and Manager: Add and Remove Data</h3>
+<div class="sourceCode" id="cb8"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Add and Remove data</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">else</span> <span class="kw">if</span> <span class="op">(</span>incr <span class="op">&amp;&amp;</span> decr<span class="op">)</span> <span class="kw">begin</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    out_data      <span class="op">&lt;=</span> buffer<span class="op">[</span>back<span class="op">];</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    buffer<span class="op">[</span>front<span class="op">]</span> <span class="op">&lt;=</span>     in_data<span class="op">;</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">// No need change count, empty or full status.</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">if</span> <span class="op">(</span>front <span class="op">&lt;</span> DEPTH<span class="dv">-1</span><span class="op">)</span> </span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>      front <span class="op">&lt;=</span> front <span class="op">+</span> <span class="dv">1</span>    <span class="op">;</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">else</span>    </span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>      front <span class="op">&lt;=</span> <span class="dv">0</span><span class="op">;</span>    </span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">if</span> <span class="op">(</span>back <span class="op">&lt;</span> DEPTH<span class="dv">-1</span><span class="op">)</span> </span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>      back  <span class="op">&lt;=</span> back <span class="op">+</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>    <span class="kw">else</span>    </span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>      back   <span class="op">&lt;=</span> <span class="dv">0</span><span class="op">;</span> </span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>  <span class="kw">end</span>   </span></code></pre></div>
+<h1 id="assigned-tasks">Assigned Tasks</h1>
+<h2 id="make-a-fifo">Make a FIFO</h2>
+<p>Based on the discussion so far, implement a FIFO in Verilog. Your implementation should handle the following:</p>
+<ul>
+<li>Module declaration, with parameters <code class="sourceCode verilog">WIDTH<span class="op">=</span><span class="dv">8</span></code>, <code class="sourceCode verilog">DEPTH<span class="op">=</span><span class="dv">5</span></code>, and <code class="sourceCode verilog">ADR_WIDTH<span class="op">=</span><span class="dv">3</span></code>.</li>
+<li>State machines for TX and RX handshaking.</li>
+<li>Buffer and Buffer manager process.</li>
+</ul>
+<p>For each of these things, you must provide appropriate initialization and internal <code class="sourceCode verilog"><span class="dt">reg</span></code> declarations.</p>
+<p>Your module should be named <code class="sourceCode verilog">fifo</code>. Test your design using the provided testbench. This test will work best using the <strong>command-line simulation</strong> method, not the full Vivado project mode.</p>
+<h2 id="testbench-output-for-fifo">Testbench Output for FIFO</h2>
+<p>The test bench will write data into your FIFO and then read it back out. It reports a list of <code class="sourceCode verilog">input_data</code> and then a list of <code class="sourceCode verilog">output_data</code>. You should see that they have the same values and the same order, like this:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="op">==============</span> PUSH DATA IN <span class="op">===============</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>          <span class="dv">2</span> in_data<span class="op">:</span> <span class="dv">129</span> tx_rdy done<span class="op">:</span><span class="dv">0</span> count<span class="op">:</span><span class="dv">0</span> front<span class="op">:</span><span class="dv">0</span> back<span class="op">:</span><span class="dv">0</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>         <span class="dv">12</span> in_data<span class="op">:</span>   <span class="dv">9</span> tx_rdy done<span class="op">:</span><span class="dv">0</span> count<span class="op">:</span><span class="dv">1</span> front<span class="op">:</span><span class="dv">1</span> back<span class="op">:</span><span class="dv">0</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>         <span class="dv">22</span> in_data<span class="op">:</span>  <span class="dv">99</span> tx_rdy done<span class="op">:</span><span class="dv">0</span> count<span class="op">:</span><span class="dv">2</span> front<span class="op">:</span><span class="dv">2</span> back<span class="op">:</span><span class="dv">0</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>         <span class="dv">32</span> in_data<span class="op">:</span>  <span class="dv">13</span> tx_rdy done<span class="op">:</span><span class="dv">0</span> count<span class="op">:</span><span class="dv">3</span> front<span class="op">:</span><span class="dv">3</span> back<span class="op">:</span><span class="dv">0</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>         <span class="dv">42</span> in_data<span class="op">:</span> <span class="dv">141</span> tx_rdy done<span class="op">:</span><span class="dv">0</span> count<span class="op">:</span><span class="dv">4</span> front<span class="op">:</span><span class="dv">4</span> back<span class="op">:</span><span class="dv">0</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>         <span class="dv">44</span> buffer full</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="op">==============</span> PULL DATA OUT <span class="op">===============</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>         <span class="dv">52</span> out_data<span class="op">:</span> <span class="dv">129</span> rx_rdy<span class="op">:</span><span class="dv">1</span> done count<span class="op">:</span><span class="dv">5</span> front<span class="op">:</span><span class="dv">0</span> back<span class="op">:</span><span class="dv">0</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>         <span class="dv">62</span> out_data<span class="op">:</span>   <span class="dv">9</span> rx_rdy<span class="op">:</span><span class="dv">1</span> done count<span class="op">:</span><span class="dv">4</span> front<span class="op">:</span><span class="dv">0</span> back<span class="op">:</span><span class="dv">1</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>         <span class="dv">72</span> out_data<span class="op">:</span>  <span class="dv">99</span> rx_rdy<span class="op">:</span><span class="dv">1</span> done count<span class="op">:</span><span class="dv">3</span> front<span class="op">:</span><span class="dv">0</span> back<span class="op">:</span><span class="dv">2</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>         <span class="dv">82</span> out_data<span class="op">:</span>  <span class="dv">13</span> rx_rdy<span class="op">:</span><span class="dv">1</span> done count<span class="op">:</span><span class="dv">2</span> front<span class="op">:</span><span class="dv">0</span> back<span class="op">:</span><span class="dv">3</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>         <span class="dv">92</span> out_data<span class="op">:</span> <span class="dv">141</span> rx_rdy<span class="op">:</span><span class="dv">1</span> done count<span class="op">:</span><span class="dv">1</span> front<span class="op">:</span><span class="dv">0</span> back<span class="op">:</span><span class="dv">4</span></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>         <span class="dv">94</span> buffer empty</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>Simulation complete</span></code></pre></div>
+<h2 id="turn-in-the-testbench-output">Turn in the Testbench Output</h2>
+<p>Use <code class="sourceCode verilog"><span class="dt">$fwrite</span></code> statements to save testbench output in a file called “fifo_test.txt”. Add it to your repository.</p>
+<h2 id="make-a-lifo-stack">Make a LIFO Stack</h2>
+<p>A <em>stack</em> is a <strong>Last-In First-Out (LIFO)</strong> buffer. The concept is similar to a FIFO, with these differences:</p>
+<ul>
+<li>The <code class="sourceCode verilog">out_data</code> is always taken from the <code class="sourceCode verilog">front</code> rather than the <code class="sourceCode verilog">back</code> of the buffer.</li>
+<li>The <code class="sourceCode verilog">back</code> of the stack is always at index 0.</li>
+<li>The <code class="sourceCode verilog">front</code> index ranges from 0 up to <code class="sourceCode verilog">DEPTH<span class="dv">-1</span></code>, so it is identical to <code class="sourceCode verilog">count</code>.</li>
+</ul>
+<p>Copy your FIFO source code to create a new module called <code class="sourceCode verilog">stack</code>. Modify the design so that it behaves as a LIFO instead of a FIFO. Test the design using the same testbench; you should see the <code class="sourceCode verilog">out_data</code> appear in reverse order.</p>
+<h2 id="testbench-output-for-lifo">Testbench Output for LIFO</h2>
+<p>Save the testbench output in a file called “lifo_test.txt” and add it to your repository.</p>
+<h2 id="design-task-fifo-application">Design Task: FIFO Application</h2>
+<p>Copy your bi-directional UART design files into the <code class="sourceCode verilog">src</code> directory. Modify the <code class="sourceCode verilog">top</code> module as follows:</p>
+<ul>
+<li>Should contain TX and RX submodules</li>
+<li>When a new character arrives from the UART channel, push it into the FIFO.</li>
+<li>If the FIFO is full, discard (ignore) the character.</li>
+<li>When the user presses a button on the Basys3, pull one character from the FIFO (if it’s non-empty) and send it to the UART.</li>
+<li>Use debouncer for the button.</li>
+</ul>
+<p>This behavior should be fairly similar to your previous UART design. Demonstrate your result in a short video, and upload the video to Canvas. (Do not add video files to the git repository, they are too large).</p>
+<h2 id="optional-design-task-stack-application">OPTIONAL Design Task: Stack Application</h2>
+<p><strong>Score Counter</strong></p>
+<p>Design a system with this specification:</p>
+<ul>
+<li>Contains a stack with <code class="sourceCode verilog">WIDTH<span class="op">=</span><span class="dv">10</span></code> and <code class="sourceCode verilog">DEPTH<span class="op">=</span><span class="dv">5</span></code>.</li>
+<li>Use the Basys3 <em>switches</em> to enter an 8-bit number.</li>
+<li>When the <em>top button</em> is pressed, the switch value is pushed on to a stack.</li>
+<li>When the <em>bottom button</em> is pressed, two values are popped from the stack and added together. The result is pushed back onto the stack. The addition needs to have <code class="sourceCode verilog">WIDTH<span class="op">=</span><span class="dv">10</span></code>, like the stack.</li>
+<li>The stack’s top value (the last thing pushed) is always displayed on the LEDs.</li>
+<li>LED(15) indicates if the stack is <code class="sourceCode verilog">full</code>.</li>
+<li>LED(14) indicates if the stack is <code class="sourceCode verilog">empty</code>.</li>
+</ul>
+</body>
+</html>

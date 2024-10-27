@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Build and Program a Simple Module</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="../../../3700.css" />
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Build and Program a Simple Module</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#examine-source-files-and-run-simulations">Examine source files and run simulations</a></li>
+<li><a href="#implement-synthesize-elaborate-placeroute">“Implement”: Synthesize, Elaborate, Place/Route</a>
+<ul>
+<li><a href="#examine-the-xdc-constraint-file">Examine the XDC constraint file</a></li>
+<li><a href="#study-the-build-script">Study the build script</a>
+<ul>
+<li><a href="#programming-the-basys3-board">Programming the Basys3 Board</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#assigned-tasks">Assigned Tasks</a>
+<ul>
+<li><a href="#run-the-build-script">Run the build script</a>
+<ul>
+<li><a href="#examine-post_synth.v">Examine post_synth.v</a></li>
+<li><a href="#examine-post_route_timing.rpt">Examine <code class="sourceCode verilog">post_route_timing.rpt</code></a></li>
+<li><a href="#examine-post_route_utilization.rpt">Examine <code class="sourceCode verilog">post_route_utilization.rpt</code></a></li>
+<li><a href="#program-the-basys3">Program the Basys3</a></li>
+<li><a href="#test-the-module">Test the Module</a></li>
+</ul></li>
+<li><a href="#design-exercise">Design Exercise</a></li>
+<li><a href="#turn-in-your-work">Turn in Your Work</a></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="examine-source-files-and-run-simulations">Examine source files and run simulations</h1>
+<p>In this assignment you will use Xilinx Vivado in non-project mode (batch mode) to optimize, place, route, and produce a bitstream. The <code class="sourceCode verilog">src/</code> directory contains the <code class="sourceCode verilog">simple_module.v</code> source code. The module’s behavior is very similar to the previous assignment:</p>
+<ul>
+<li>When enabled (<code class="sourceCode verilog">en == <span class="dv">1</span></code>), the output <code class="sourceCode verilog">q</code> is assigned (<code class="sourceCode verilog">&lt;=</code>) the input <code class="sourceCode verilog">d</code></li>
+<li>When not enabled (<code class="sourceCode verilog">en == <span class="dv">0</span></code>), the output <code class="sourceCode verilog">q</code> is not changed</li>
+<li><code class="sourceCode verilog">q</code> is initially set to 0</li>
+</ul>
+<p>The <code class="sourceCode verilog">src/</code> directory also contains simulation tests in the file <code class="sourceCode verilog">testbench.v</code>. This testbench illustrates an alternative method for generating test patterns with <code class="sourceCode verilog"><span class="kw">case</span></code> statements. These lines make signal changes after the indicated number of clock cycles:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">case</span>(clk_count)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>   <span class="dv">2</span>: <span class="kw">begin</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>      d &lt;= <span class="dv">1</span>;</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>   <span class="kw">end</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>   <span class="dv">5</span>: <span class="kw">begin</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a>      en &lt;= <span class="dv">1</span>;</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a>      d  &lt;= <span class="dv">0</span>;</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a>   <span class="kw">end</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a>   <span class="dv">8</span>: <span class="kw">begin</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a>      d  &lt;= <span class="dv">1</span>;</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true"></a>   <span class="kw">end</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true"></a><span class="kw">endcase</span> <span class="co">// case (clk_count)</span></span></code></pre></div>
+<p>These lines make signal changes when the <code class="sourceCode verilog">clk_count</code> equals 2, 5, and 8. The signals stay constant during other clock cycles, which will allow us to observe the delay between input and output signal changes.</p>
+<p>Run the simulation using <code class="sourceCode verilog">make</code>. You should notice that when both <code class="sourceCode verilog">en</code> and <code class="sourceCode verilog">d</code> change to <code class="sourceCode verilog"><span class="dv">1</span></code>, then <code class="sourceCode verilog">q</code> changes to <code class="sourceCode verilog"><span class="dv">1</span></code> after a delay of one clock cycle. The results ought to look like this:</p>
+<pre class="text"><code>clk:           0 en: 0   d: 0 q: 0
+clk:           1 en: 0   d: 0 q: 0
+clk:           2 en: 0   d: 0 q: 0
+clk:           3 en: 0   d: 1 q: 0
+clk:           4 en: 0   d: 1 q: 0
+clk:           5 en: 0   d: 1 q: 0
+clk:           6 en: 1   d: 0 q: 0
+clk:           7 en: 1   d: 0 q: 0
+clk:           8 en: 1   d: 0 q: 0
+clk:           9 en: 1   d: 1 q: 0
+clk:          10 en: 1   d: 1 q: 1
+clk:          11 en: 1   d: 1 q: 1</code></pre>
+<p>Notice that the assignment <code class="sourceCode verilog">d &lt;= <span class="dv">1</span></code> is applied when <code class="sourceCode verilog">clk_count</code> equals 2, but the change doesn’t take effect until <code class="sourceCode verilog">clk_count</code> is 3. The clocked assignment always has a 1-cycle delay. So when both <code class="sourceCode verilog">en</code> and <code class="sourceCode verilog">d</code> are raised at cycle 8, the assignment takes effect at cycle 9. The change in <code class="sourceCode verilog">q</code> appears at cycle 10, since the assignment in <code class="sourceCode verilog">simple_module</code> adds another cycle of delay.</p>
+<h1 id="implement-synthesize-elaborate-placeroute">“Implement”: Synthesize, Elaborate, Place/Route</h1>
+<h2 id="examine-the-xdc-constraint-file">Examine the XDC constraint file</h2>
+<p>When a design is implemented on a physical FPGA chip, a <strong>constraint file</strong> must be provided. In the Xilinx platform, the constraints are specified in an “XDC file” which serves several purposes:</p>
+<ul>
+<li>Connect module ports to physical pins on the FPGA.</li>
+<li>Specify the logic voltage level for each signal.</li>
+<li>Define the system clock pin and its frequency.</li>
+<li>Specify external signal timing constraints if needed.</li>
+<li>Set special I/O features.</li>
+</ul>
+<p>In this design, we use the XDC file to define the clock signal and associate pins. Open the file named <code class="sourceCode verilog">simple_module.xdc</code> and look carefully at each line.</p>
+<p>These lines setup the clock:</p>
+<pre class="xdc"><code>set_property PACKAGE_PIN W5 [get_ports clk]                         
+set_property IOSTANDARD LVCMOS33 [get_ports clk]
+create_clock -add -name sys_clk_pin -period 10.00 -waveform {0 5} [get_ports clk]</code></pre>
+<p>The next few lines associate switches 0 and 1 to inputs en and d:</p>
+<pre class="xdc"><code>set_property PACKAGE_PIN V17 [get_ports en]                 
+    set_property IOSTANDARD LVCMOS33 [get_ports en]
+set_property PACKAGE_PIN V16 [get_ports d]                  
+    set_property IOSTANDARD LVCMOS33 [get_ports d]</code></pre>
+<p>Note that there are two lines for each signal, one to associate the FPGA pin, and a second line to configure the voltage.</p>
+<p>The last few lines associate LED 0 to signal <code class="sourceCode verilog">q</code>:</p>
+<pre class="xdc"><code>set_property PACKAGE_PIN U16 [get_ports q]                  
+set_property IOSTANDARD LVCMOS33 [get_ports q]</code></pre>
+<p>These lines are all edited from the <code class="sourceCode verilog">Basys3_master.xdc</code> file located in the main 3700 directory. All of the Basys3 features and their pin connections are defined in that file.</p>
+<h2 id="study-the-build-script">Study the build script</h2>
+<p>You will implement the design using a TCL script (pronounced “tickle”). TCL is short for “Tool Command Language” and is widely used in Electronic Design Automation (EDA). Open the file <code class="sourceCode verilog">build.tcl</code> and examine each line.</p>
+<p>The first few lines <strong>load sources and contraint files</strong>:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode tcl"><code class="sourceCode tcl"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a><span class="co"># Load sources</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a>read_verilog <span class="kw">[</span> <span class="kw">glob</span> src/*.v <span class="kw">]</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true"></a>read_xdc simple_module.xdc</span></code></pre></div>
+<p>The <strong>glob</strong> keyword is a tcl command that returns a list of matching files. The other commands, <code class="sourceCode verilog">read_verilog</code> and <code class="sourceCode verilog">read_xdc</code>, are specific to Vivado and are self-explanatory.</p>
+<p>Next we <strong>synthesize</strong> the design using the <code class="sourceCode verilog">synth_design</code> command. The synthesis process converts your <strong>behavioral RTL</strong> design to a <strong>structural Verilog</strong> design that uses only <strong>cell primitive</strong> types that exist on the FPGA.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode tcl"><code class="sourceCode tcl"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a><span class="co"># Run Synthesis</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true"></a>synth_design<span class="ot"> -top</span> simple_module<span class="ot"> -part</span> xc7a35tcpg236<span class="dv">-1</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true"></a>write_verilog<span class="ot"> -force</span> post_synth.v</span></code></pre></div>
+<p>The options shown here specify the <strong>top</strong> module and the <strong>FPGA part</strong> used in the Basys3 board. You always need to specify the correct top module and FPGA part identifier.</p>
+<p>Next comes the <strong>place</strong> procedure, which assigns a <em>specific</em> FPGA cell to every primitive cell instance in the synthesized design. The <strong>route</strong> procedure solves the switch patterns needed to interconnect all the assigned cells so that the final product matches the specified design.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode tcl"><code class="sourceCode tcl"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a><span class="co"># Implement (optimize, place, route)</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a>opt_design</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true"></a>place_design</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true"></a>route_design</span></code></pre></div>
+<p>After the place-and-route procedure, we should always generate <strong>timing and utilization reports</strong>:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode tcl"><code class="sourceCode tcl"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true"></a><span class="co"># Generate Reports</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true"></a>report_timing_summary<span class="ot"> -file</span> post_route_timing.rpt</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true"></a>report_utilization<span class="ot"> -file</span> post_route_utilization.rpt</span></code></pre></div>
+<p>These reports indicate whether the implementation was successful. We’ll discuss the details later in this assignment.</p>
+<p>The last line creates a <strong>bitstream</strong> which can be used to program the actual FPGA.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode tcl"><code class="sourceCode tcl"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true"></a><span class="co"># Make bitstream</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true"></a>write_bitstream<span class="ot"> -force</span> simple_module.bit</span></code></pre></div>
+<p>This should create a bitstream file called <code class="sourceCode verilog">simple_module.bit</code>. The <code class="sourceCode verilog">-<span class="kw">force</span></code> directive indicates that it’s okay to overwrite any existing bitstream file (if <code class="sourceCode verilog">-<span class="kw">force</span></code> is not specified, the script halts with an error rather than overwrite an old version of the file).</p>
+<h3 id="programming-the-basys3-board">Programming the Basys3 Board</h3>
+<p>You can use the Vivado Hardware Manager to program the bitstream file onto the Basys3 board. <strong>Alternatively,</strong> you can save the bitstream onto a <strong>USB thumdrive</strong> (it should be the only bitstream file in the thumbdrive’s root directory); then plug the thumbdrive into the Basys3’s right-side USB port. Change the adjacent jumper setting to “USB” and the board will load the USB bitstream file on powerup.</p>
+<h1 id="assigned-tasks">Assigned Tasks</h1>
+<h2 id="run-the-build-script">Run the build script</h2>
+<p>Now run the build process by typing <code class="sourceCode verilog">make implement</code> in the terminal. It may take a few minutes to complete. When it finishes, a directory listing should reveal the two report files and the bitstream file.</p>
+<h3 id="examine-post_synth.v">Examine post_synth.v</h3>
+<p>Use a text viewer/editor to open the synthesized <strong>netlist</strong> file. (“Netlist” is another term for a structural hardware description; a “net” is a wire and a “netlist” is a list of wire connections between components). You can read the file directly in the terminal using the <code class="sourceCode verilog">less</code> command.</p>
+<p>In the netlist, note that there are no <code class="sourceCode verilog"><span class="kw">always</span></code> or <code class="sourceCode verilog"><span class="dt">reg</span></code> statements. Everything is either a <code class="sourceCode verilog"><span class="dt">wire</span></code> or a <strong>primitive cell</strong>. Some example primitive cells are:</p>
+<ul>
+<li>LUT – Look-Up Table, defines an arbitrary logic function</li>
+<li>BUFG – Global clock buffer</li>
+<li>IBUF – Input signal buffer</li>
+<li>OBUF – Output signal buffer</li>
+<li>FDRE – D Flip-Flop Register with clock enable and synchronous reset</li>
+</ul>
+<p>With further exploration, you can see that the <strong>LUT</strong> implements the logic operation on <code class="sourceCode verilog">d</code> and <code class="sourceCode verilog">en</code>. Here is the LUT instance:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true"></a>  LUT2 #(</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true"></a>    .INIT(<span class="bn">4&#39;h8</span>)) </span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true"></a>    q_i_<span class="dv">1</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true"></a>       (.I0(d_IBUF),</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true"></a>        .I1(en_IBUF),</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true"></a>        .O(q_i_<span class="dv">1</span>_n_<span class="dv">0</span>));</span></code></pre></div>
+<p>This module is of type <code class="sourceCode verilog">LUT2</code> (it has 2 inputs). The logic function is defined by the <code class="sourceCode verilog">INIT</code> parameter, which is set to 8, or binary <code class="sourceCode verilog"><span class="dv">1000</span></code>. In this number, the <strong>Most Significant Bit (MSB)</strong> is a 1. All other bits, including the <strong>Least Significant Bit (LSB)</strong>, are 0.</p>
+<p>The <code class="sourceCode verilog">INIT</code> parameter defines a logic <strong>truth table</strong>. The binary <code class="sourceCode verilog"><span class="dv">1000</span></code> gives the order of logic output values in the table:</p>
+<table>
+<thead>
+<tr class="header">
+<th>en</th>
+<th>d</th>
+<th>q</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>&lt;– LSB</td>
+</tr>
+<tr class="even">
+<td>0</td>
+<td>1</td>
+<td>0</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>&lt;– MSB</td>
+</tr>
+</tbody>
+</table>
+<p>As you might imagine, the LUT is a powerful logic cell since it can be configured to implement any desired function.</p>
+<h3 id="examine-post_route_timing.rpt">Examine <code class="sourceCode verilog">post_route_timing.rpt</code></h3>
+<p>Use a text viewer/editor to open the timing report file. The most important part of the report is the <strong>timing summary</strong> table. Scroll down to find it. Here is a portion of the table:</p>
+<pre class="text"><code>------------------------------------------------------------------------------------------------
+| Design Timing Summary
+| ---------------------
+------------------------------------------------------------------------------------------------
+
+    WNS(ns)      TNS(ns)  TNS Failing Endpoints  TNS Total Endpoints      WHS(ns)      THS(ns)  
+    -------      -------  ---------------------  -------------------      -------      -------  
+         NA           NA                     NA                   NA           NA           NA  
+
+
+All user specified timing constraints are met.
+</code></pre>
+<p>You should look first at the <strong>Worst Negative Slack (WNS)</strong>. This measures register-to-register delay. If the <em>slack</em> is positive, then the delay is short enough to avoid timing faults. <strong>If the slack is negative, then the delay is too high</strong>, which means the next clock edge will likely occur before the logic signal arrives, causing an error.</p>
+<p>In this design, we only have one register, so the WNS cannot be computed. For large designs, WNS often becomes the central focus of design effort. Later in this assignment, you will modify the design to make a <strong>signal pipeline</strong> in which a logic value is passed from one register to another. The timing slack measures the reliability of that pipeline: a positive slack means the signal beats the clock. A negative slack means the signal doesn’t get there in time.</p>
+<h3 id="examine-post_route_utilization.rpt">Examine <code class="sourceCode verilog">post_route_utilization.rpt</code></h3>
+<p>Use a text viewer/editor to open the timing report file. This file reports how many of each primitive cell type are used in the design. It also reports <strong>percent utilization</strong> for each cell type. If the utilization exceeds 100% for any resource, then the design cannot be programmed onto the target FPGA part.</p>
+<p>The different resources categories are reported in a collection of tables, like this one:</p>
+<pre class="text"><code>+-------------------------+------+-------+-----------+-------+
+|        Site Type        | Used | Fixed | Available | Util% |
++-------------------------+------+-------+-----------+-------+
+| Slice LUTs              |    1 |     0 |     20800 | &lt;0.01 |
+|   LUT as Logic          |    1 |     0 |     20800 | &lt;0.01 |
+|   LUT as Memory         |    0 |     0 |      9600 |  0.00 |
+| Slice Registers         |    1 |     0 |     41600 | &lt;0.01 |
+|   Register as Flip Flop |    1 |     0 |     41600 | &lt;0.01 |
+|   Register as Latch     |    0 |     0 |     41600 |  0.00 |
+| F7 Muxes                |    0 |     0 |     16300 |  0.00 |
+| F8 Muxes                |    0 |     0 |      8150 |  0.00 |
++-------------------------+------+-------+-----------+-------+</code></pre>
+<p>In the FPGA, the LUTs and Registers are arranged into <strong>Logic Slices</strong>, which are further grouped into <strong>Configurable Logic Blocks (CLBs)</strong>. A number of <strong>multiplexers (Muxes)</strong> serve as configurable switches to control how the slices are inter-connected. In most designs, these are the most heavily used resources.</p>
+<p>Scrolling further down, you will see a list of other resources that are not used in this design, but may be valuable in future projects:</p>
+<ul>
+<li>Block RAM – specialized high-density memory resources</li>
+<li>MMCM – Advanced clock manager</li>
+<li>PLL – Phase Locked Loop (for synchronizing or multiplying clock frequencies)</li>
+<li>DSP – Digital Signal Processing modules</li>
+<li>XADC – Analog to Digital Converter</li>
+</ul>
+<p>These resources provide specialized functionality beyond the “programmable gate array” features, allowing for designs with better performance. For example, the DSP module contains a dedicated multiplier. Since it is able to be optimized to work solely as a multiplier, it is much faster and more compact than what could be achieved with all-purpose logic slices. We will explore some of these special-purpose modules in future assignments.</p>
+<h3 id="program-the-basys3">Program the Basys3</h3>
+<h4 id="using-the-vivado-hardware-manager">Using the Vivado Hardware Manager</h4>
+<p>On your local machine, plug in the Basys3 board, turn it on, and launch the Vivado hardware manager. To access the Hardware Manager, launch Vivado from the Applications menu or from a local terminal. It should present you with a window showing various options, where you should select <strong>Open Hardware Manager</strong>.</p>
+<p>Next, the Hardware Manager window should appear. Near the top left of the window, click <strong>Open Target</strong> and select <strong>Auto Connect</strong>. It should identify your Basys3 device and open a connection to it. Then click <strong>Program Device</strong> and provide the path to your <code class="sourceCode verilog">simple_module.bit</code> file.</p>
+<h4 id="using-a-thumb-drive">Using a Thumb Drive</h4>
+<p>Copy your bitstream file onto a thumb drive with a USB Type-A connector (Type-A is the most common type). Make sure there is only one <code class="sourceCode verilog">.bit</code> file in the top folder of your thumb drive. Eject the thumbdrive from your computer. Turn off the Basys3. Plug your thumbdrive into the USB port on the right side, above the pushbuttons. <strong>Move the <code class="sourceCode verilog">JP1</code> jumper to the USB setting.</strong> Turn on the Basys3. The amber light should “throb” for a moment while the bitstream is retrieved from the thumb drive. Once complete, the amber light will turn off and your design should be active.</p>
+<h3 id="test-the-module">Test the Module</h3>
+<p>Once the board is programmed, verify the truth table:</p>
+<table>
+<thead>
+<tr class="header">
+<th>sw0</th>
+<th>sw1</th>
+<th>LED0</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>0</td>
+<td>1</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>1</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+<h2 id="design-exercise">Design Exercise</h2>
+<p>Modify the design to add a second register, so that we can properly evaluate the WNS. This modification will create a logic pipeline between two registers:</p>
+<figure>
+<img src="figures/pipeline.png" alt="" /><figcaption>Diagram of a simple logic pipeline.</figcaption>
+</figure>
+<p>In this pipeline, the signal <code class="sourceCode verilog">_q</code> is connected between two registers: it is the output of D Register 1, and it is the input of D Register 2. Both of these registers are controlled by the same clock signal. When the external input <code class="sourceCode verilog">d</code> changes, Register 1 locks-in the new value upon the rising edge of <code class="sourceCode verilog">clk</code>. There is some physical delay before the new value appears on <code class="sourceCode verilog">_q</code>. Register 2 will lock-in the new value upon the rising edge of <code class="sourceCode verilog">clk</code>, so <code class="sourceCode verilog">_q</code> has to stabilize before the clock rises. If <code class="sourceCode verilog">_q</code> stablizes early, the extra time is called the slack:</p>
+<figure>
+<img src="figures/timing.png" alt="" /><figcaption>Illustration of timing slack in a signal pipeline.</figcaption>
+</figure>
+<p>To change your design and implement the signal pipeline, follow these steps:</p>
+<ul>
+<li>Create a new <strong>top</strong> module in the file <code class="sourceCode verilog">src/top.v</code></li>
+<li>In <code class="sourceCode verilog">src/top.v</code>, do the following:
+<ul>
+<li>Use the <strong>same input/output declarations</strong> as simple_module</li>
+<li>Declare a <strong>wire</strong> <code class="sourceCode verilog">_q</code> to make an internal connection</li>
+<li>Create an <strong>instance</strong> of simple_module named <code class="sourceCode verilog">SM1</code></li>
+<li><strong>Pass through</strong> the inputs <code class="sourceCode verilog">clk</code>, <code class="sourceCode verilog">en</code>, and <code class="sourceCode verilog">d</code> to <code class="sourceCode verilog">SM1</code></li>
+<li>Connect <code class="sourceCode verilog">SM1.q</code> to <code class="sourceCode verilog">_q</code></li>
+<li>Using an <strong>always</strong> block, assign <code class="sourceCode verilog">q &lt;= _q</code></li>
+</ul></li>
+<li>Modify <code class="sourceCode verilog">src/testbench.v</code> so that it instantiates <code class="sourceCode verilog">top</code> instead of <code class="sourceCode verilog">simple_module</code></li>
+<li>Modify <code class="sourceCode verilog">build.tcl</code>, change the <code class="sourceCode verilog">synth_design</code> line to replace <code class="sourceCode verilog">simple_module</code> with <code class="sourceCode verilog">top</code>:</li>
+</ul>
+<div class="sourceCode" id="cb14"><pre class="sourceCode tcl"><code class="sourceCode tcl"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true"></a>synth_design<span class="ot"> -top</span> top<span class="ot"> -part</span> xc7a35tcpg236<span class="dv">-1</span></span></code></pre></div>
+<p>Then <strong>simulate</strong> the design by running <code class="sourceCode verilog">make</code>. You should observe a <strong>two-cycle delay</strong> in the output signal.</p>
+<p>Once verified, run <code class="sourceCode verilog">make implement</code> to build the design. Then open the <code class="sourceCode verilog">.rpt</code> files and observe:</p>
+<ul>
+<li>WNS should be a positive number, take note of it.</li>
+<li>Utilization report should show 2 FDRE registers.</li>
+</ul>
+<p>You do not need to program the design onto your board.</p>
+<h2 id="turn-in-your-work">Turn in Your Work</h2>
+<p>To turn in your work, run these commands:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true"></a><span class="fu">git</span> add *.rpt</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true"></a><span class="fu">git</span> add src/top.v</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true"></a><span class="fu">git</span> commit . -m <span class="st">&quot;Complete.&quot;</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true"></a><span class="fu">git</span> push origin master</span></code></pre></div>
+<p>Then indicate on Canvas that your work is done.</p>
+</body>
+</html>

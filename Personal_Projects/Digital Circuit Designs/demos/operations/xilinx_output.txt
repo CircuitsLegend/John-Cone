@@ -1,0 +1,9 @@
+Initializations: en=0, a=  2, b=  3, q=  8, q_next=  x
+combinational block evaluated
+          0: en: 0  a:   2  b:   3  q_next:   3 q:   8
+          1: en: 0  a:   2  b:   3  q_next:   3 q:   3
+combinational block evaluated
+          2: en: 1  a:   2  b:   3  q_next:   2 q:   3
+combinational block evaluated
+          3: en: 0  a:   2  b:   3  q_next:   3 q:   2
+          4: en: 0  a:   2  b:   3  q_next:   3 q:   3

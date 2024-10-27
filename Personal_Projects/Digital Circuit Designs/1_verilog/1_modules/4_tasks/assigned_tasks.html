@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>task in Verilog</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../../../3700.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title"><code class="sourceCode verilog"><span class="kw">task</span></code> in Verilog</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#about-the-task-keyword">About the <code class="sourceCode verilog"><span class="kw">task</span></code> Keyword</a></li>
+<li><a href="#assigned-tasks">Assigned Tasks</a>
+<ul>
+<li><a href="#tasks-in-testbenches">Tasks in Testbenches</a></li>
+<li><a href="#tasks-in-include-files">Tasks in Include Files</a></li>
+<li><a href="#tasks-in-modules">Tasks in Modules</a></li>
+<li><a href="#implement-reverse_bits_module">Implement <code class="sourceCode verilog">reverse_bits_module</code></a></li>
+<li><a href="#turn-in-your-work">Turn in Your Work</a></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="about-the-task-keyword">About the <code class="sourceCode verilog"><span class="kw">task</span></code> Keyword</h1>
+<p>A <code class="sourceCode verilog"><span class="kw">task</span></code> is a group of statements that would usually appear in an <code class="sourceCode verilog"><span class="kw">always</span></code> block. If we need to repeat the same statements multiple times, it makes sense to define them as a <code class="sourceCode verilog"><span class="kw">task</span></code>. Common examples include simple data format conversions, such as reversing the bit order in a vector. Say we have an 8-bit vector <code class="sourceCode verilog">v</code>. In some specifications, the Least Significant Bit (LSB) is on the “right”, i.e. v[0]. In other specifications, the LSB is on the “left”, i.e. v[7].</p>
+<p>For some project, we may need to reverse the bit order of several vectors. This particularly occurs with filesystem interfaces and data communication channels. Do do this, we could use <code class="sourceCode verilog"><span class="kw">for</span></code> loops, as in this code snippet:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="dt">input</span>      [<span class="dv">7</span>:<span class="dv">0</span>] a, b;</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="dt">output</span> <span class="dt">reg</span> [<span class="dv">7</span>:<span class="dv">0</span>] q, w;</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="dt">integer</span> idx; <span class="co">// Loop Index</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="kw">always</span> @(a,b) <span class="kw">begin</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>   <span class="kw">for</span> (idx=<span class="dv">0</span>; idx&lt;<span class="dv">8</span>; idx=idx+<span class="dv">1</span>) <span class="kw">begin</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>      q[<span class="dv">7</span>-idx] = a[idx];</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>      w[<span class="dv">7</span>-idx] = b[idx];</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>   <span class="kw">end</span>   </span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code></pre></div>
+<p>This seems simple enough, but if we need to do this for many different signals, in multiple modules, it would make sense to group these lines into a simpler reusable statement. To accomplish this, we put the loop into a <code class="sourceCode verilog"><span class="kw">task</span></code> like this:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">task</span> <span class="dt">automatic</span> reverse_bits_task;</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>   <span class="dt">input</span>   [<span class="dv">7</span>:<span class="dv">0</span>]  in;</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>   <span class="dt">output</span>  [<span class="dv">7</span>:<span class="dv">0</span>]  out;</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>   <span class="dt">integer</span>          idx;</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>   <span class="kw">begin</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>      <span class="kw">for</span> (idx=<span class="dv">0</span>; idx&lt;<span class="dv">8</span>; idx=idx+<span class="dv">1</span>) <span class="kw">begin</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>         out[<span class="dv">7</span>-idx] = in[idx];</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>      <span class="kw">end</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>   <span class="kw">end</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="kw">endtask</span></span></code></pre></div>
+<p>Then to use the <code class="sourceCode verilog"><span class="kw">task</span></code>, we reference it within an <code class="sourceCode verilog"><span class="kw">always</span></code> block like this:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">always</span> @(a,b) <span class="kw">begin</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>   reverse_bits_task(.in(a),.out(q));</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>   reverse_bits_task(.in(b),.out(w));</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code></pre></div>
+<p>The <code class="sourceCode verilog"><span class="kw">task</span></code> definition has to appear inside of the module. The <code class="sourceCode verilog"><span class="dt">automatic</span></code> keyword is usually required; it instructs the simulator to allocate fresh memory every time the task is evaluated. The default non-<code class="sourceCode verilog"><span class="dt">automatic</span></code> behavior has fewer applications and can create subtle simulation bugs.</p>
+<p>So almost always <strong>your tasks should be automatic</strong>.</p>
+<h1 id="assigned-tasks">Assigned Tasks</h1>
+<h2 id="tasks-in-testbenches">Tasks in Testbenches</h2>
+<p>Tasks probably get the most use in testbenches. We’ll start with a simple example that simulates the <code class="sourceCode verilog">reverse_bits_task</code> shown above. In a text editor, open the file <code class="sourceCode verilog">src/testbench.v</code>. At the bottom of the testbench module, place the definition for <code class="sourceCode verilog">reverse_bits_task</code>. Find the <code class="sourceCode verilog"><span class="kw">always</span></code> block that assigns <code class="sourceCode verilog">q</code> and <code class="sourceCode verilog">w</code>, and change it from <code class="sourceCode verilog"><span class="kw">for</span></code> loops to task invocations. You should remove or comment out the declaration of <code class="sourceCode verilog">idx</code> since it is now defined within the task.</p>
+<p>Type <code class="sourceCode verilog">make</code> to run the simulation. You should see several lines of output reporting a-&gt;q and b-&gt;w. Verify that the bits are correctly reversed in each case.</p>
+<h2 id="tasks-in-include-files">Tasks in Include Files</h2>
+<p>A task can be reused in a variety of different modules and testbenches. To facilitate this, Verilog has a `<code class="sourceCode verilog">include</code> directive that imports lines from external files. You can use this to organize <code class="sourceCode verilog">reverse_bits_task</code> in its own file.</p>
+<p>Move the <code class="sourceCode verilog">reverse_bits_task</code> definition into a file called <code class="sourceCode verilog">inc/reverse_bits_task.v</code> (remove or comment the task definition in <code class="sourceCode verilog">testbench.v</code>). Then, in the testbench, add the include directive from inside the module:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ot">`include </span><span class="fl">&quot;inc/reverse_bits_task.v&quot;</span></span></code></pre></div>
+<p>Run the test again, you should get the same result.</p>
+<h2 id="tasks-in-modules">Tasks in Modules</h2>
+<p>Next, remove or comment the `<code class="sourceCode verilog">include</code> line in the <code class="sourceCode verilog">testbench.v</code>. Create a new module file named <code class="sourceCode verilog">src/reverse_bits_module.v</code>, to act as a “wrapper” for the task:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">module</span> reverse_bits_module</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  (</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>   <span class="dt">input</span> [<span class="dv">7</span>:<span class="dv">0</span>]      a,</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>   <span class="dt">input</span> [<span class="dv">7</span>:<span class="dv">0</span>]      b,</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>   <span class="dt">output</span> <span class="dt">reg</span> [<span class="dv">7</span>:<span class="dv">0</span>] q,</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>   <span class="dt">output</span> <span class="dt">reg</span> [<span class="dv">7</span>:<span class="dv">0</span>] w</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>   );</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="ot">`include </span><span class="fl">&quot;inc/reverse_bits_task.v&quot;</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>   <span class="kw">always</span> @(a,b) <span class="kw">begin</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>      reverse_bits_task(a,q);</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>      reverse_bits_task(b,w);</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>   <span class="kw">end</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="kw">endmodule</span></span></code></pre></div>
+<p>In the testbench, remove or comment the lines that reference the <code class="sourceCode verilog">reverse_bits_task</code>, and make an instance of <code class="sourceCode verilog">reverse_bits_module</code>. You will need to change <code class="sourceCode verilog">q</code> and <code class="sourceCode verilog">w</code> to <code class="sourceCode verilog"><span class="dt">wire</span></code> types.</p>
+<h2 id="implement-reverse_bits_module">Implement <code class="sourceCode verilog">reverse_bits_module</code></h2>
+<p>A task is <strong>synthesizable</strong> if it</p>
+<ol type="1">
+<li>Contains only synthesizeable statements, and<br />
+</li>
+<li>Is invoked within a synthesizeable module.</li>
+</ol>
+<p>Examples of <strong>non-synthesizeable</strong> statements include:</p>
+<ul>
+<li>Asynchronous time delays using <code class="sourceCode verilog">#N</code> syntax<br />
+</li>
+<li>System tasks like <code class="sourceCode verilog"><span class="dt">$display</span></code> or <code class="sourceCode verilog"><span class="dt">$random</span></code><br />
+</li>
+<li>Complex math like division or trigonometric functions<br />
+</li>
+<li>Real-valued variables and operations</li>
+</ul>
+<p>To be synthesizeable, a module needs inputs and outputs, and should be fully defined by synthesizeable statements; non-synthesizeable lines can exist for simulation purposes, but they are ignored during synthesis.</p>
+<p>Fortunately for our <code class="sourceCode verilog"><span class="kw">task</span></code>, a <code class="sourceCode verilog"><span class="kw">for</span></code> loop is synthesizeable. With <code class="sourceCode verilog">reverse_bits_module</code> serving as a top module, we can synthesize and verify the design on the Basys3 board. Open <code class="sourceCode verilog">reverse_bits.xdc</code> and examine the constraints. Input vector <code class="sourceCode verilog">a</code> is mapped to switches 0–7, and input vector <code class="sourceCode verilog">b</code> is mapped to switches 8–15. Output vector <code class="sourceCode verilog">q</code> is mapped to LEDs 0–7, and <code class="sourceCode verilog">w</code> is mapped to 8–15. Also notice that there is no clock in this design.</p>
+<p>Run <code class="sourceCode verilog">make implement</code> to build the design. Since there is no clock or other timing constraints in the design, the timing report is meaningless. The utilization report is more interesting. Open it and notice that there is no logic utilization – zero. The <code class="sourceCode verilog">reverse_bits_task</code> is implemented entirely in <strong>routing</strong>, i.e. switch configurations.</p>
+<p>If successful, the build process should create <code class="sourceCode verilog">reverse_bits.bit</code>. Program the Basys3 board with this bitstream and verify that the left/right 8-bit groups are reversed. Verify and photograph the following cases:</p>
+<ul>
+<li>Case 1: <code class="sourceCode verilog">a=<span class="dv">00010011</span></code>, <code class="sourceCode verilog">b=<span class="dv">01010101</span></code></li>
+<li>Case 2: <code class="sourceCode verilog">a=<span class="dv">11101100</span></code>, <code class="sourceCode verilog">b=<span class="dv">01101001</span></code></li>
+</ul>
+<p>Place photos of the two cases in your working directory, and name them <code class="sourceCode verilog">case1</code> and <code class="sourceCode verilog">case2</code> (with the appropriate graphics file extension).</p>
+<h2 id="turn-in-your-work">Turn in Your Work</h2>
+<p>To complete this assignment, commit and push your results to the repository, and indicate on Canvas that it is complete:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> add *.bit *.rpt *.txt inc/ src/*</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> commit . -m <span class="st">&quot;Complete.&quot;</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> push origin master</span></code></pre></div>
+</body>
+</html>

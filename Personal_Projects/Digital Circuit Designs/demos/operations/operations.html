@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+ "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title>Operations Demo: ambiguity of initial conditions</title>
+  <style type="text/css">
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" type="text/css" media="screen, projection, print"
+    href="https://www.w3.org/Talks/Tools/Slidy2/styles/slidy.css" />
+  <link rel="stylesheet" type="text/css" media="screen, projection, print"
+   href="../../3700.css" />
+  <script src="https://www.w3.org/Talks/Tools/Slidy2/scripts/slidy.js"
+    charset="utf-8" type="text/javascript"></script>
+</head>
+<body>
+<div class="slide titlepage">
+  <h1 class="title">Operations Demo: ambiguity of initial
+conditions</h1>
+</div>
+<div id="initial-statements-and-ambiguous-cases"
+class="slide section level1">
+<h1><code>initial</code> statements and ambiguous cases</h1>
+<p>In this demonstration, I wanted to show a simple operation:</p>
+<pre class="{verilog}"><code>initial begin
+  a  = 8&#39;d2;
+  b  = 8&#39;d3;
+  q  = 8&#39;d8;
+  en = 0;
+end
+
+always @(*) begin
+  q_next = (a &amp; {8{en}}) | (b &amp; {8{~en}});
+end</code></pre>
+</div>
+<div id="initial-vs-always" class="slide section level1">
+<h1><code>initial</code> vs <code>always @(*)</code></h1>
+<p><strong>Problem:</strong> Will the <code>always</code> block be
+evaluated as part of the initial conditions?</p>
+<pre class="{verilog}"><code>initial begin
+  a  = 8&#39;d2;
+  b  = 8&#39;d3;
+  q  = 8&#39;d8;
+  en = 0;
+end
+
+always @(*) begin
+  q_next = (a &amp; {8{en}}) | (b &amp; {8{~en}});
+end</code></pre>
+</div>
+<div id="initial-vs-always-1" class="slide section level1">
+<h1><code>initial</code> vs <code>always @(*)</code></h1>
+<p><strong>Problem:</strong> Will the <code>always</code> block be
+evaluated as part of the initial conditions?</p>
+<ul>
+<li>Xilinx says YES</li>
+<li>Cadence says NO</li>
+</ul>
+</div>
+<div id="cadence-simulation" class="slide section level1">
+<h1>Cadence Simulation</h1>
+<pre><code>xrun operations.v</code></pre>
+<p>Output: Combinational block is NOT evaluated with initial
+conditions!</p>
+<pre><code>Initializations: en=0, a=  2, b=  3, q=  8, q_next=  x
+          0: en: 0  a:   2  b:   3  q_next:   x q:   8
+          1: en: 0  a:   2  b:   3  q_next:   x q:   x
+combinational block evaluated
+          2: en: 1  a:   2  b:   3  q_next:   2 q:   x
+combinational block evaluated
+          3: en: 0  a:   2  b:   3  q_next:   3 q:   2
+          4: en: 0  a:   2  b:   3  q_next:   3 q:   3
+          5: en: 0  a:   2  b:   3  q_next:   3 q:   3</code></pre>
+</div>
+<div id="xilinx-output" class="slide section level1">
+<h1>Xilinx Output</h1>
+<pre><code>xvlog operations.v
+xelab operations
+xsim operations</code></pre>
+<p>Output: Combinational block IS evaluated with initial conditions!</p>
+<pre><code>Initializations: en=0, a=  2, b=  3, q=  8, q_next=  x
+combinational block evaluated
+          0: en: 0  a:   2  b:   3  q_next:   3 q:   8
+          1: en: 0  a:   2  b:   3  q_next:   3 q:   3
+combinational block evaluated
+          2: en: 1  a:   2  b:   3  q_next:   2 q:   3
+combinational block evaluated
+          3: en: 0  a:   2  b:   3  q_next:   3 q:   2
+          4: en: 0  a:   2  b:   3  q_next:   3 q:   3</code></pre>
+</div>
+<div id="general-solution" class="slide section level1">
+<h1>General Solution</h1>
+<p>For a portable solution that has the same result in every tool,
+<strong>duplicate any combinational assignments into the initial
+block.</strong></p>
+<pre class="{verilog}"><code>initial begin
+  a  = 8&#39;d2;
+  b  = 8&#39;d3;
+  q  = 8&#39;d8;
+  en = 0;
+
+  q_next = (a &amp; {8{en}}) | (b &amp; {8{~en}});
+end
+
+always @(*) begin
+  q_next = (a &amp; {8{en}}) | (b &amp; {8{~en}});
+end</code></pre>
+</div>
+</body>
+</html>

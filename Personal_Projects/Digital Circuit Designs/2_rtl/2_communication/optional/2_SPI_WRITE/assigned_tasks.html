@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>SPI CMD/Read/Write Protocol</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../../../3700.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">SPI CMD/Read/Write Protocol</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#bi-directional-spi-communication">Bi-Directional SPI Communication</a>
+<ul>
+<li><a href="#specification-for-spi_register-peripheral">Specification for <code class="sourceCode verilog">spi_register</code> Peripheral</a></li>
+<li><a href="#signal-timing-posedge-controller-and-negedge-peripheral">Signal timing: <code class="sourceCode verilog"><span class="kw">posedge</span></code> (controller) and <code class="sourceCode verilog"><span class="kw">negedge</span></code> (peripheral)</a></li>
+<li><a href="#system-design">System Design</a></li>
+<li><a href="#state-transition-diagram">State Transition Diagram</a></li>
+<li><a href="#modified-debouncer">Modified Debouncer</a></li>
+</ul></li>
+<li><a href="#assigned-tasks">Assigned Tasks</a>
+<ul>
+<li><a href="#make-a-top-module">Make a <code class="sourceCode verilog">top</code> Module</a></li>
+<li><a href="#testbench-simulation">Testbench Simulation</a></li>
+<li><a href="#debugging-and-troubleshooting">Debugging and Troubleshooting</a></li>
+<li><a href="#implement-and-test-on-the-basys3">Implement and Test on the Basys3</a></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="bi-directional-spi-communication">Bi-Directional SPI Communication</h1>
+<p>Many SPI devices support two-way communication using both <code class="sourceCode verilog">SDO</code> (serial data out) and <code class="sourceCode verilog">SDI</code> (serial data in) wires. The signalling is initiated using the <code class="sourceCode verilog">CS_n</code> wire, and timing is controlled using the <code class="sourceCode verilog">SCLK</code> wire. Since there is only one <code class="sourceCode verilog">CS_n</code> wire, a bi-directional SPI peripheral has no idea whether the operation is READ or WRITE.</p>
+<p>To solve this problem, most peripherals operate in WRITE mode by default, watching for a <strong>command</strong> on the <code class="sourceCode verilog">SDI</code> wire. The device defines a set of <strong>command codes</strong> that can be issued via the <code class="sourceCode verilog">SDI</code> interface. All bus transactions begin with a command code, followed by either a READ from <code class="sourceCode verilog">SDO</code> or a WRITE on <code class="sourceCode verilog">SDI</code>.</p>
+<p>On the <strong>controller side</strong>, in order to READ data from the peripheral the controller must first WRITE the appropriate command code onto <code class="sourceCode verilog">SDI</code>, then the peripheral immediately responds with the requested data on <code class="sourceCode verilog">SDO</code>.</p>
+<h2 id="specification-for-spi_register-peripheral">Specification for <code class="sourceCode verilog">spi_register</code> Peripheral</h2>
+<p>To demonstrate a cmd/read/write SPI interface, we will use a simple <code class="sourceCode verilog">spi_register</code> peripheral design with these specifications:</p>
+<ul>
+<li>Contains one 16-bit internal register</li>
+<li>Supports <strong>8-bit command codes</strong></li>
+<li>Supports <strong>16-bit data words</strong></li>
+<li>Recognizes <strong>two command codes:</strong>
+<ul>
+<li><strong>GET (50h):</strong> get data from the internal register</li>
+<li><strong>PUT (46h):</strong> put data into the internal register</li>
+</ul></li>
+</ul>
+<p>We will use distinct terms for <strong>SPI bus operations</strong> as opposed to internal <strong>peripheral command codes</strong>. Here is a key to the terminology:</p>
+<ul>
+<li><code class="sourceCode verilog">READ</code> – controller sends a command on <code class="sourceCode verilog">SDI</code>, the peripheral sends data on <code class="sourceCode verilog">SDO</code></li>
+<li><code class="sourceCode verilog">WRITE</code> – controller sends a command on <code class="sourceCode verilog">SDI</code>, the controller sends data on <code class="sourceCode verilog">SDI</code></li>
+<li><code class="sourceCode verilog">GET</code> – peripheral detects command <code class="sourceCode verilog">50h</code>, transmits register data on <code class="sourceCode verilog">SDI</code></li>
+<li><code class="sourceCode verilog">PUT</code> – peripheral detects command <code class="sourceCode verilog">46h</code>, overwrites register data from <code class="sourceCode verilog">SDO</code></li>
+</ul>
+<p>We will use the terms <code class="sourceCode verilog">READ<span class="op">/</span>WRITE</code> to describe timing specifications for the SPI signals, and the terms <code class="sourceCode verilog">GET<span class="op">/</span>PUT</code> refer to the peripheral’s internal logic.</p>
+<h2 id="signal-timing-posedge-controller-and-negedge-peripheral">Signal timing: <code class="sourceCode verilog"><span class="kw">posedge</span></code> (controller) and <code class="sourceCode verilog"><span class="kw">negedge</span></code> (peripheral)</h2>
+<p>In order for the controller and peripheral to synchronize reliably, the peripheral is usually synchronized to the <strong>negative edge</strong> of <code class="sourceCode verilog">SCLK</code>. If the controller is synchronized to the <strong>positive edge</strong>, then some of the state machine logic is simplified. This two-phase strategy is depicted in the timing diagram for a <code class="sourceCode verilog">READ</code> operation shown below.</p>
+<figure>
+<img src="figures/write_read_timing.svg" style="width:100.0%" alt="Timing diagram for an SPI READ operation. The controller WRITEs a command on SDI, and the peripheral responds with requested data on SDO." /><figcaption aria-hidden="true">Timing diagram for an SPI <code class="sourceCode verilog">READ</code> operation. The controller <code class="sourceCode verilog">WRITE</code>s a command on <code class="sourceCode verilog">SDI</code>, and the peripheral responds with requested data on <code class="sourceCode verilog">SDO</code>.</figcaption>
+</figure>
+<p>In the above diagram, all of the controller actions occur on the positive <code class="sourceCode verilog">SCLK</code> edges (gray lines). So <code class="sourceCode verilog">CS_n</code> and <code class="sourceCode verilog">SDI</code> change with the positive edges. The peripheral “sees” the <code class="sourceCode verilog">SDI</code> values on the negative <code class="sourceCode verilog">SCLK</code> edges (blue lines). For each bit of the command code (shaded in red), <code class="sourceCode verilog">SDI</code> is stable at the time the peripheral “sees” it.</p>
+<p>When the peripheral answers on the <code class="sourceCode verilog">SDO</code> wire, the signal changes with the negative edges of <code class="sourceCode verilog">SCLK</code>. The controller “sees” the <code class="sourceCode verilog">SDO</code> values on the positive <code class="sourceCode verilog">SCLK</code> edges, so the signal is stable at the time it is sensed by the controller.</p>
+<p>The timing for a <code class="sourceCode verilog">WRITE</code> operation is similar, shown in the diagram below. For the <code class="sourceCode verilog">WRITE</code> operation, all <code class="sourceCode verilog">SDI</code> changes occur on the positive edges of <code class="sourceCode verilog">SCLK</code>, and the values are sensed by the peripheral on the negative edges.</p>
+<figure>
+<img src="figures/write_write_timing.svg" style="width:100.0%" alt="Timing diagram for a bi-directional SPI operation. The controller WRITEs a command on SDI, and then immediately writes the data on SDI." /><figcaption aria-hidden="true">Timing diagram for a bi-directional SPI operation. The controller <code class="sourceCode verilog">WRITEs</code> a command on <code class="sourceCode verilog">SDI</code>, and then immediately writes the data on <code class="sourceCode verilog">SDI</code>.</figcaption>
+</figure>
+<h2 id="system-design">System Design</h2>
+<p>In this assignment, you will create an SPI interface for a <strong>single-word 16-bit register</strong>. The <code class="sourceCode verilog">spi_register</code> “peripheral” will reside inside the FPGA, simulating an external device. The user (you) supplies input data using the <code class="sourceCode verilog">sw</code> inputs on the Basys3 board, and output data is displayed on the board’s <code class="sourceCode verilog">led</code> lights. To write data into the <code class="sourceCode verilog">spi_register</code>, the user presses a button designated as the <code class="sourceCode verilog">wr_btn</code>, causing the controller to write bits from <code class="sourceCode verilog">sw</code> into the <code class="sourceCode verilog">spi_register</code>. When the user presses <code class="sourceCode verilog">rd_btn</code>, the controller reads bits from the <code class="sourceCode verilog">spi_register</code> and displays them on <code class="sourceCode verilog">led</code>. A block diagram for this system is shown below.</p>
+<figure>
+<img src="figures/block_diagram.svg" style="width:75.0%" alt="Block diagram for the simpleSPI cmd/read/write demonstration with spi_register." /><figcaption aria-hidden="true">Block diagram for the <code class="sourceCode verilog">simpleSPI</code> cmd/read/write demonstration with <code class="sourceCode verilog">spi_register</code>.</figcaption>
+</figure>
+<h2 id="state-transition-diagram">State Transition Diagram</h2>
+<p>The state transition diagram shown below is based on the <code class="sourceCode verilog">simpleSPI</code> <code class="sourceCode verilog">READ</code> interface that we developed for the PmodALS project. This version of the diagram is referred to as “high-level” because it does not show every precise operation, and some operations are described in normal English to clarify the behavior.</p>
+<figure>
+<img src="figures/high_level_state_diagram.svg" style="width:100.0%" alt="High-level state transition diagram for simpleSPI cmd/read/write interface" /><figcaption aria-hidden="true">High-level state transition diagram for <code class="sourceCode verilog">simpleSPI</code> cmd/read/write interface</figcaption>
+</figure>
+<p>This FSM design is very similar to the read-only interface we studied previously, with a few key differences:</p>
+<ul>
+<li>Two inputs <code class="sourceCode verilog">wr</code> and <code class="sourceCode verilog">rd</code></li>
+<li><code class="sourceCode verilog">CMD</code> state to write the <code class="sourceCode verilog">cmd_code</code> bits</li>
+<li><code class="sourceCode verilog">READ</code> and <code class="sourceCode verilog">WRITE</code> states occur after the <code class="sourceCode verilog">CMD</code> state</li>
+</ul>
+<h2 id="modified-debouncer">Modified Debouncer</h2>
+<p>We will trigger the <code class="sourceCode verilog">GET</code> and <code class="sourceCode verilog">PUT</code> commands using buttons on the Basys3 board. Each buttons requires a <code class="sourceCode verilog">debouncer</code> module. We will modify the <code class="sourceCode verilog">debouncer</code> so that it implements a <code class="sourceCode verilog">rd<span class="op">/</span>wr<span class="op">/</span>done</code> handshaking protocol with <code class="sourceCode verilog">simpleSPI</code>. The behavior should be like this:</p>
+<ul>
+<li><code class="sourceCode verilog">debouncer</code> waits in state 0</li>
+<li><code class="sourceCode verilog">btn</code> is pressed, <code class="sourceCode verilog">debouncer</code> moves to state 1, starts the <code class="sourceCode verilog">tcounter</code></li>
+<li>if <code class="sourceCode verilog">btn</code> bounces to <code class="sourceCode verilog"><span class="dv">0</span></code>, then <code class="sourceCode verilog">debouncer</code> resets to state 0</li>
+<li>if <code class="sourceCode verilog">btn</code> is sustained until the counter event <code class="sourceCode verilog">t</code>, then <code class="sourceCode verilog">debouncer</code> moves to state 2 and raises the command signal, either <code class="sourceCode verilog">rd</code> or <code class="sourceCode verilog">wr</code>.</li>
+<li>the command <code class="sourceCode verilog">rd<span class="op">/</span>wr</code> stays high until <code class="sourceCode verilog">simpleSPI</code> answers with the <code class="sourceCode verilog">done</code> signal; when <code class="sourceCode verilog">done</code> goes high, <code class="sourceCode verilog">debouncer</code> resets to state 0 and lowers the command signal.</li>
+</ul>
+<p>The altered state machine looks like this:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>     <span class="kw">case</span> <span class="op">(</span>state<span class="op">)</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>       <span class="dv">0</span><span class="op">:</span> <span class="co">// WAIT FOR PRESS</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>         <span class="kw">begin</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>        <span class="kw">if</span> <span class="op">(</span>btn<span class="op">)</span> <span class="kw">begin</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>           clear <span class="op">&lt;=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>           state <span class="op">&lt;=</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>        <span class="kw">end</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>        <span class="kw">else</span> <span class="kw">begin</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>           clear <span class="op">&lt;=</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>           </span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>        <span class="kw">end</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>         <span class="kw">end</span> <span class="co">// case: 0</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>       <span class="dv">1</span><span class="op">:</span> <span class="co">// PRESS</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>         <span class="kw">begin</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>            <span class="co">// BUTTON SUSTAINED:</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>        <span class="kw">if</span> <span class="op">(</span>t <span class="op">&amp;&amp;</span> btn<span class="op">)</span> <span class="kw">begin</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>           state <span class="op">&lt;=</span> <span class="dv">2</span><span class="op">;</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>           btn_db <span class="op">&lt;=</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>        <span class="kw">end</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>        <span class="co">// BOUNCE:</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>        <span class="kw">else</span> <span class="kw">if</span> <span class="op">(!</span>btn <span class="op">&amp;&amp;</span> <span class="op">!</span>t<span class="op">)</span> <span class="kw">begin</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>           state <span class="op">&lt;=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>           clear <span class="op">&lt;=</span> <span class="dv">1</span><span class="op">;</span>         </span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>        <span class="kw">end</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>         <span class="kw">end</span> <span class="co">// case: 1</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>       <span class="dv">2</span><span class="op">:</span> <span class="co">// WAIT FOR DONE</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>         <span class="kw">begin</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>        <span class="kw">if</span> <span class="op">(</span>done<span class="op">)</span> <span class="kw">begin</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>           btn_db <span class="op">&lt;=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>           state <span class="op">&lt;=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>           clear <span class="op">&lt;=</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>        <span class="kw">end</span></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>         <span class="kw">end</span></span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>     <span class="kw">endcase</span> <span class="co">// case (state)</span></span></code></pre></div>
+<p>Copy your <code class="sourceCode verilog">debouncer.v</code> Verilog source from the previous assignment into <code class="sourceCode verilog">src<span class="op">/</span></code> and make the changes needed to implement the state machine described here.</p>
+<h1 id="assigned-tasks">Assigned Tasks</h1>
+<p>Copy your <code class="sourceCode verilog">simpleSPI</code> design from the previous assignment, and modify it to enable WRITE operations as follows:</p>
+<ul>
+<li>Modify user-side ports for read/write I/O:</li>
+</ul>
+<div class="sourceCode" id="cb2"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>  <span class="dt">input</span>             wr<span class="op">,</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">input</span>         rd<span class="op">,</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">input</span>      <span class="op">[</span><span class="dv">15</span><span class="op">:</span><span class="dv">0</span><span class="op">]</span> d_in<span class="op">,</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">output</span> <span class="dt">reg</span> <span class="op">[</span><span class="dv">15</span><span class="op">:</span><span class="dv">0</span><span class="op">]</span> d_out<span class="op">,</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">output</span> <span class="dt">reg</span>        done</span></code></pre></div>
+<ul>
+<li>Modify SPI ports to include <code class="sourceCode verilog">SDI</code>:</li>
+</ul>
+<div class="sourceCode" id="cb3"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>  <span class="dt">output</span> <span class="dt">reg</span> CS_n<span class="op">,</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">output</span> <span class="dt">reg</span> SCLK<span class="op">,</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">output</span> <span class="dt">reg</span> SDI<span class="op">,</span>  <span class="co">// from controller to peripheral</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">input</span>      SDO   <span class="co">// from peripheral to controller</span></span></code></pre></div>
+<ul>
+<li>Use <code class="sourceCode verilog"><span class="dt">localparam</span></code> to define command codes:</li>
+</ul>
+<div class="sourceCode" id="cb4"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>    <span class="dt">localparam</span> GET_CODE <span class="op">=</span> <span class="bn">8&#39;h50</span><span class="op">;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">localparam</span> PUT_CODE <span class="op">=</span> <span class="bn">8&#39;h46</span><span class="op">;</span></span></code></pre></div>
+<ul>
+<li>Check the <code class="sourceCode verilog">bit_index</code> declaration to ensure it can support values up to 15.</li>
+<li>Check the <code class="sourceCode verilog">state</code> declaration to ensure it can support all the unique state numbers.</li>
+<li>Declare an 8-bit <code class="sourceCode verilog"><span class="dt">reg</span></code> named <code class="sourceCode verilog">cmd_code</code> to contain the selected command.</li>
+<li>Modify the <code class="sourceCode verilog"><span class="kw">initial</span></code> block to initialize any new signals.</li>
+<li>Use <code class="sourceCode verilog"><span class="dt">localparam</span></code> to define state values for <code class="sourceCode verilog">RST</code>, <code class="sourceCode verilog">INIT</code>, and all the other states.</li>
+<li>Remove the <code class="sourceCode verilog">d_ready</code> signal since we will now use <code class="sourceCode verilog">done</code> for handshaking on both <code class="sourceCode verilog">wr</code> and <code class="sourceCode verilog">rd</code> commands.</li>
+<li>Implement the <code class="sourceCode verilog">CMD</code>, <code class="sourceCode verilog">READ</code> and <code class="sourceCode verilog">WRITE</code> states based on the high-level state diagram.</li>
+</ul>
+<h3 id="make-a-top-module">Make a <code class="sourceCode verilog">top</code> Module</h3>
+<p>Create a <code class="sourceCode verilog">top</code> module with the features listed below.</p>
+<ul>
+<li>Input ports:
+<ul>
+<li>clk</li>
+<li>rst</li>
+<li>rd_btn</li>
+<li>wr_btn</li>
+<li>sw (16 bits)</li>
+</ul></li>
+<li>Output ports:
+<ul>
+<li>led (16 bits)</li>
+</ul></li>
+<li>Declare internal <code class="sourceCode verilog"><span class="dt">wire</span></code> signals:
+<ul>
+<li>SPI bus: <code class="sourceCode verilog">CS_n</code>, <code class="sourceCode verilog">SCLK</code>, <code class="sourceCode verilog">SDI</code>, and <code class="sourceCode verilog">SDO</code></li>
+<li>handshaking: <code class="sourceCode verilog">wr</code>, <code class="sourceCode verilog">rd</code>, and <code class="sourceCode verilog">done</code></li>
+</ul></li>
+<li>Declare and <code class="sourceCode verilog"><span class="kw">assign</span></code> a <code class="sourceCode verilog">rst_n</code> signal derived from <code class="sourceCode verilog">rst</code></li>
+<li>Instantiate a <code class="sourceCode verilog">simpleSPI</code> module and name the instance <code class="sourceCode verilog">SPI_iface</code>
+<ul>
+<li>Connect the four SPI <code class="sourceCode verilog"><span class="dt">wire</span></code>s to <code class="sourceCode verilog">SPI_iface</code></li>
+<li>Connect the handshaking <code class="sourceCode verilog"><span class="dt">wire</span></code>s <code class="sourceCode verilog">wr</code>, <code class="sourceCode verilog">rd</code>, and <code class="sourceCode verilog">done</code></li>
+<li>Connect <code class="sourceCode verilog">sw</code> to port <code class="sourceCode verilog">d_in</code>, and <code class="sourceCode verilog">led</code> to port <code class="sourceCode verilog">d_out</code></li>
+</ul></li>
+<li>Instantiate the <code class="sourceCode verilog">spi_register</code> module with instance name <code class="sourceCode verilog">memoryModel</code>, using the port definitions declared in <code class="sourceCode verilog">src<span class="op">/</span>spi_register.v</code>.
+<ul>
+<li>Connect SPI signals to both <code class="sourceCode verilog">SPI_iface</code> and <code class="sourceCode verilog">memoryModel</code></li>
+</ul></li>
+<li>Instantiate two modified <code class="sourceCode verilog">debouncers</code> for <code class="sourceCode verilog">wr_btn</code> and <code class="sourceCode verilog">rd_btn</code>, with instances named <code class="sourceCode verilog">wdb</code> and <code class="sourceCode verilog">rdb</code> respectively.
+<ul>
+<li>Connect <code class="sourceCode verilog">wr</code> and <code class="sourceCode verilog">rd</code> to the <code class="sourceCode verilog">btn_db</code> outputs on their respective <code class="sourceCode verilog">debouncer</code> modules</li>
+</ul></li>
+</ul>
+<h2 id="testbench-simulation">Testbench Simulation</h2>
+<p>A testbench is provided in <code class="sourceCode verilog">src<span class="op">/</span>testbench.v</code>. This testbench simulates random button presses on <code class="sourceCode verilog">rd_btn</code> and <code class="sourceCode verilog">wr_btn</code>, with random values generated on <code class="sourceCode verilog">sw</code>. causing it to perform <code class="sourceCode verilog">GET</code> and <code class="sourceCode verilog">PUT</code> operations at random times. A VCD file is produced, and a text output is generated as in previous assignments.</p>
+<p>If your design is correct from the start (an unlikely event), then your output should resemble the text below. <code class="sourceCode verilog">SDI</code> values are printed on the negedge of <code class="sourceCode verilog">SCLK</code>, and <code class="sourceCode verilog">SDO</code> values are printed on the posedge. When a <code class="sourceCode verilog">PUT<span class="op">/</span>GET</code> operation begins, the <code class="sourceCode verilog">testbench</code> prints an information message “Starting GET” or “Starting PUT”. The next 8 lines should show the command bits on <code class="sourceCode verilog">SDI</code> (bolded below). For a <code class="sourceCode verilog">GET</code> operation, the next 16 lines should show the register bits (initially <code class="sourceCode verilog">ABCDh</code>). For a <code class="sourceCode verilog">PUT</code> operation, they should show the bits from <code class="sourceCode verilog">d_in</code>.</p>
+<pre>
+Starting GET
+negedge sw: 90a8 <strong>SDI: 0</strong>   posedge  SDO: 1 led: 0000 (0000000000000000)  
+negedge sw: 90a8 <strong>SDI: 1</strong>   posedge  SDO: 1 led: 0000 (0000000000000000)  
+negedge sw: 90a8 <strong>SDI: 0</strong>   posedge  SDO: 1 led: 0000 (0000000000000000)  
+negedge sw: 90a8 <strong>SDI: 1</strong>   posedge  SDO: 1 led: 0000 (0000000000000000)  
+negedge sw: 90a8 <strong>SDI: 0</strong>   posedge  SDO: 1 led: 0000 (0000000000000000)  
+negedge sw: 90a8 <strong>SDI: 0</strong>   posedge  SDO: 1 led: 0000 (0000000000000000)  
+negedge sw: 90a8 <strong>SDI: 0</strong>   posedge  SDO: 1 led: 0000 (0000000000000000)  
+negedge sw: 90a8 <strong>SDI: 0</strong>   posedge  SDO: 1 led: 8000 (1000000000000000)  
+negedge sw: 90a8 SDI: 0   posedge  <strong>SDO: 0</strong> led: 8000 (1000000000000000)  
+negedge sw: 90a8 SDI: 0   posedge  <strong>SDO: 1</strong> led: a000 (1010000000000000)  
+negedge sw: 90a8 SDI: 0   posedge  <strong>SDO: 0</strong> led: a000 (1010000000000000)  
+negedge sw: 90a8 SDI: 0   posedge  <strong>SDO: 1</strong> led: a800 (1010100000000000)  
+negedge sw: 90a8 SDI: 0   posedge  <strong>SDO: 0</strong> led: a800 (1010100000000000)  
+negedge sw: 90a8 SDI: 0   posedge  <strong>SDO: 1</strong> led: aa00 (1010101000000000)  
+negedge sw: 90a8 SDI: 0   posedge  <strong>SDO: 1</strong> led: ab00 (1010101100000000)  
+negedge sw: 90a8 SDI: 0   posedge  <strong>SDO: 1</strong> led: ab80 (1010101110000000)  
+negedge sw: 90a8 SDI: 0   posedge  <strong>SDO: 1</strong> led: abc0 (1010101111000000)  
+negedge sw: 90a8 SDI: 0   posedge  <strong>SDO: 0</strong> led: abc0 (1010101111000000)  
+negedge sw: 90a8 SDI: 0   posedge  <strong>SDO: 0</strong> led: abc0 (1010101111000000)  
+negedge sw: 90a8 SDI: 0   posedge  <strong>SDO: 1</strong> led: abc8 (1010101111001000)  
+negedge sw: 90a8 SDI: 0   posedge  <strong>SDO: 1</strong> led: abcc (1010101111001100)  
+negedge sw: 90a8 SDI: 0   posedge  <strong>SDO: 0</strong> led: abcc (1010101111001100)  
+negedge sw: 90a8 SDI: 0   posedge  <strong>SDO: 1</strong> led: abcd (1010101111001101)  
+negedge sw: 90a8 SDI: 0   posedge  <strong>SDO: 1</strong> led: abcd (1010101111001101)  
+Completed GET with data abcd
+</pre>
+<p>For a <code class="sourceCode verilog">PUT</code> operation, the <code class="sourceCode verilog">SDO</code> signal stays constant and all the data appears on <code class="sourceCode verilog">SDI</code>:</p>
+<pre>
+Starting PUT with data 7b69
+negedge sw: 7b69 <strong>SDI: 0</strong>  SDO: 1 led: abcd (1010101111001101) 
+negedge sw: 7b69 <strong>SDI: 1</strong>  SDO: 1 led: abcd (1010101111001101) 
+negedge sw: 7b69 <strong>SDI: 0</strong>  SDO: 1 led: abcd (1010101111001101) 
+negedge sw: 7b69 <strong>SDI: 0</strong>  SDO: 1 led: abcd (1010101111001101) 
+negedge sw: 7b69 <strong>SDI: 0</strong>  SDO: 1 led: abcd (1010101111001101) 
+negedge sw: 7b69 <strong>SDI: 1</strong>  SDO: 1 led: abcd (1010101111001101) 
+negedge sw: 7b69 <strong>SDI: 1</strong>  SDO: 1 led: abcd (1010101111001101) 
+negedge sw: 7b69 <strong>SDI: 0</strong>  SDO: 1 led: abcd (1010101111001101) 
+negedge sw: 7b69 <strong>SDI: 0</strong>  SDO: 1 led: abcd (1010101111001101) 
+negedge sw: 7b69 <strong>SDI: 1</strong>  SDO: 1 led: abcd (1010101111001101) 
+negedge sw: 7b69 <strong>SDI: 1</strong>  SDO: 1 led: abcd (1010101111001101) 
+negedge sw: 7b69 <strong>SDI: 1</strong>  SDO: 1 led: abcd (1010101111001101) 
+negedge sw: 7b69 <strong>SDI: 1</strong>  SDO: 1 led: abcd (1010101111001101) 
+negedge sw: 7b69 <strong>SDI: 0</strong>  SDO: 1 led: abcd (1010101111001101) 
+negedge sw: 7b69 <strong>SDI: 1</strong>  SDO: 1 led: abcd (1010101111001101) 
+negedge sw: 7b69 <strong>SDI: 1</strong>  SDO: 1 led: abcd (1010101111001101) 
+negedge sw: 7b69 <strong>SDI: 0</strong>  SDO: 1 led: abcd (1010101111001101) 
+negedge sw: 7b69 <strong>SDI: 1</strong>  SDO: 1 led: abcd (1010101111001101) 
+negedge sw: 7b69 <strong>SDI: 1</strong>  SDO: 1 led: abcd (1010101111001101) 
+negedge sw: 7b69 <strong>SDI: 0</strong>  SDO: 1 led: abcd (1010101111001101) 
+negedge sw: 7b69 <strong>SDI: 1</strong>  SDO: 1 led: abcd (1010101111001101) 
+negedge sw: 7b69 <strong>SDI: 0</strong>  SDO: 1 led: abcd (1010101111001101) 
+negedge sw: 7b69 <strong>SDI: 0</strong>  SDO: 1 led: abcd (1010101111001101) 
+negedge sw: 7b69 <strong>SDI: 1</strong>  SDO: 1 led: abcd (1010101111001101) 
+Completed PUT with data 7b69
+</pre>
+<p>Following a <code class="sourceCode verilog">PUT</code> operation, the subsequent <code class="sourceCode verilog">GET</code> operation should return the same data:</p>
+<pre>
+Starting PUT with data <strong>7b69</strong>
+
+...
+
+Completed PUT with data 7b69
+Starting GET
+
+...
+
+Completed GET with data <strong>7b69</strong>
+</pre>
+<h2 id="debugging-and-troubleshooting">Debugging and Troubleshooting</h2>
+<p>If your initial simulation result doesn’t have the correct behavior, you should diagnose the problem using a graphical waveform viewer, either use <code class="sourceCode verilog">gtkwave</code> to view the VCD file, or run the simulation using <code class="sourceCode verilog">make gui</code>. Closely inspect the timing for <code class="sourceCode verilog">GET</code> and <code class="sourceCode verilog">PUT</code> operations, paying careful attention to the positive and negative <code class="sourceCode verilog">SCLK</code> edges, and the <code class="sourceCode verilog">state</code> of your <code class="sourceCode verilog">simpleSPI</code> interface.</p>
+<p>As your designs become increasingly complex, you will need to develop skills and habits to systematically diagnose design errors. For any design, you should contemplate possible test failures and imagine their possible causes. Below are some common examples.</p>
+<ul>
+<li><strong>Problem:</strong> No text output from <code class="sourceCode verilog">testbench</code>.
+<ul>
+<li>Events that should trigger text output:
+<ul>
+<li><code class="sourceCode verilog">CS_n</code> goes LOW, triggered by
+<ul>
+<li><code class="sourceCode verilog">simpleSPI</code> entering <code class="sourceCode verilog">CMD</code> state, triggered by</li>
+<li><code class="sourceCode verilog">simpleSPI</code> receives <code class="sourceCode verilog">rd</code> or <code class="sourceCode verilog">wr</code> while in <code class="sourceCode verilog">WAIT</code> state, preceded by
+<ul>
+<li><code class="sourceCode verilog">debouncer</code> modules acting on <code class="sourceCode verilog">rd_btn</code> or <code class="sourceCode verilog">wr_btn</code>, dependent on…</li>
+<li><code class="sourceCode verilog">simpleSPI</code> starting in <code class="sourceCode verilog">RST</code> then <code class="sourceCode verilog">INIT</code> states, triggered by…</li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+<p>This listing is the beginning of a <strong>Fishbone Diagram</strong> or <strong>Ishikawa Diagram</strong>, which is a systematic method to diagnose the root causes of a problem. An example diagram is shown below. When analyzing the problem, we trace back along the branches, first checking the most “obvious” or top-level items on the right, then exploring the deeper items toward the left.</p>
+<figure>
+<img src="figures/fishbone.svg" style="width:100.0%" alt="Example of a fishbone diagram for the simpleSPI interface." /><figcaption aria-hidden="true">Example of a <strong>fishbone diagram</strong> for the <code class="sourceCode verilog">simpleSPI</code> interface.</figcaption>
+</figure>
+<p>Let’s study an example failure. After completing the <code class="sourceCode verilog">simpleSPI</code>, <code class="sourceCode verilog">top</code> and <code class="sourceCode verilog">debouncer</code> modules, the <code class="sourceCode verilog">testbench</code> simulation runs with no output. The simulation ran with no error messages, so the problem is not due to a syntax error. At this point, we should inspect the signal waveforms using either <code class="sourceCode verilog">make gui</code> or <code class="sourceCode verilog">gtkwave</code>.</p>
+<p>First, we check the top-level signals, <code class="sourceCode verilog">clk</code> and <code class="sourceCode verilog">rst_n</code>.</p>
+<figure>
+<img src="figures/clk_rst.png" style="width:100.0%" alt="Clock and reset signals." /><figcaption aria-hidden="true">Clock and reset signals.</figcaption>
+</figure>
+<p>The top-level signals look good, so next we check <code class="sourceCode verilog">SCLK</code>.</p>
+<figure>
+<img src="figures/sclk.png" style="width:100.0%" alt="SCLK signal" /><figcaption aria-hidden="true">SCLK signal</figcaption>
+</figure>
+<p><code class="sourceCode verilog">SCLK</code> looks good, so next we’ll investigate the handshake signals:</p>
+<figure>
+<img src="figures/rd_wr_handshake.png" style="width:100.0%" alt="Handshake signals" /><figcaption aria-hidden="true">Handshake signals</figcaption>
+</figure>
+<p>Here we can see that the buttons <code class="sourceCode verilog">rd_btn</code> and <code class="sourceCode verilog">wr_btn</code> are being “pressed”, and <strong>the system is stuck in a <code class="sourceCode verilog">rd</code> request, but the operation never starts.</strong></p>
+<p>Next we’ll examine the <code class="sourceCode verilog">state</code> register in <code class="sourceCode verilog">simpleSPI</code>, along with its dependencies (the dependencies are the signals used for any edge conditions in the state graph).</p>
+<figure>
+<img src="figures/state_signals.png" style="width:100.0%" alt="Interface state and its related signals." /><figcaption aria-hidden="true">Interface <code class="sourceCode verilog">state</code> and its related signals.</figcaption>
+</figure>
+<p>Here we notice that <code class="sourceCode verilog">simpleSPI</code> arrives in <code class="sourceCode verilog">state</code> 2 (<code class="sourceCode verilog">WAIT</code>), but does not go any further. Judging from the state transition diagram, in order to reach <code class="sourceCode verilog">state</code> 3 the condition is <code class="sourceCode verilog">t <span class="op">&amp;&amp;</span> <span class="op">(</span>rd <span class="op">||</span> wr<span class="op">)</span></code>. From the signal plot, we can see that <code class="sourceCode verilog">rd</code> goes high but <code class="sourceCode verilog">t</code> never does. <strong>This points to the <code class="sourceCode verilog">tcounter</code> as the problem.</strong></p>
+<p>Now examining all the signals related to the <code class="sourceCode verilog">tcounter</code>:</p>
+<figure>
+<img src="figures/tcounter_signals.png" style="width:100.0%" alt="Signals related to tcounter" /><figcaption aria-hidden="true">Signals related to <code class="sourceCode verilog">tcounter</code></figcaption>
+</figure>
+<p>In this signal plot we notice something truly odd: <strong>the <code class="sourceCode verilog">tcount</code> is supposed to count up to ten, but instead it just toggles between <code class="sourceCode verilog"><span class="dv">0</span></code> and <code class="sourceCode verilog"><span class="dv">1</span></code></strong>. Since this is unexpected behavior, we examine the source code related to <code class="sourceCode verilog">tcount</code>:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>   <span class="co">//-----------------------------------------</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>   <span class="co">// Alarm Timer Process</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>   <span class="co">//-----------------------------------------</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>   <span class="kw">always</span> <span class="op">@(</span><span class="kw">posedge</span> SCLK<span class="op">)</span> <span class="kw">begin</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>      <span class="kw">if</span> <span class="op">(</span>t_rst<span class="op">)</span> <span class="kw">begin</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>     t       <span class="op">&lt;=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>     t_count <span class="op">&lt;=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>      <span class="kw">end</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>      <span class="kw">else</span> <span class="kw">begin</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>     <span class="kw">if</span> <span class="op">(</span>t_count <span class="op">&gt;</span> <span class="dv">10</span><span class="op">)</span> <span class="kw">begin</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>        t <span class="op">&lt;=</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>     <span class="kw">end</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>     <span class="kw">else</span> <span class="kw">begin</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>        t_count <span class="op">&lt;=</span> t_count <span class="op">+</span> <span class="dv">1</span><span class="op">;</span>     </span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>     <span class="kw">end</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>      <span class="kw">end</span></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>   <span class="kw">end</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>   <span class="co">//-----------------------------------------</span></span></code></pre></div>
+<p>After studying each line and conditional statement, the code looks correct. The problem must be in some other section of the source code. There are two possibilities:</p>
+<ul>
+<li>there could be a problem with the <strong>signal declarations</strong>, or</li>
+<li>there could be a <strong>duplicate assignment</strong> to <code class="sourceCode verilog">t_count</code> elsewhere in the same module.</li>
+</ul>
+<p>To track it down, we can do a text search for every occurrence of <code class="sourceCode verilog">t_count</code>. These are all the other lines that involve <code class="sourceCode verilog">t_count</code> (I cut out all the other signals so we can focus just on <code class="sourceCode verilog">t_count</code>):</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>   <span class="dt">reg</span>        t_count<span class="op">;</span>    <span class="co">// timer count</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>   <span class="kw">initial</span> <span class="kw">begin</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>      t_count    <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>   <span class="kw">end</span></span></code></pre></div>
+<p><strong>There’s the mistake:</strong> <code class="sourceCode verilog">t_count</code> is declared as a <code class="sourceCode verilog"><span class="dt">reg</span></code>, which has <strong>only one bit</strong> by default. In order for <code class="sourceCode verilog">t_count</code> to count up to 10, <strong>it needs at least 4 bits</strong>. We fix the mistake:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>   <span class="dt">reg</span>  <span class="op">[</span><span class="dv">3</span><span class="op">:</span><span class="dv">0</span><span class="op">]</span>  t_count<span class="op">;</span>    <span class="co">// timer count (4 bits)</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>   </span></code></pre></div>
+<p>Now repeating the simulation, we see the expected <code class="sourceCode verilog">testbench</code> output and the signal patterns look more correct:</p>
+<figure>
+<img src="figures/correct_signals.png" style="width:100.0%" alt="Correct signal waveforms." /><figcaption aria-hidden="true">Correct signal waveforms.</figcaption>
+</figure>
+<h2 id="implement-and-test-on-the-basys3">Implement and Test on the Basys3</h2>
+<p>Once the <code class="sourceCode verilog">testbench</code> simulation is verified to be correct, run <code class="sourceCode verilog">make implement</code> to create the bitstream, and program it onto the Basys3. The button mappings are:</p>
+<ul>
+<li><code class="sourceCode verilog">btnU</code>: <code class="sourceCode verilog">GET</code></li>
+<li><code class="sourceCode verilog">btnD</code>: <code class="sourceCode verilog">PUT</code></li>
+<li><code class="sourceCode verilog">btnC</code>: <code class="sourceCode verilog">rst</code></li>
+</ul>
+<p>After programming, perform a <code class="sourceCode verilog">GET</code> operation and verify that you see the value <code class="sourceCode verilog">ABCDh</code> on the LEDs. Then <strong>record a short video showing LEDs initially at <code class="sourceCode verilog">led <span class="op">=</span> 0000h</code>, with the switches set to <code class="sourceCode verilog">sw <span class="op">=</span> 1071h</code>. Press <code class="sourceCode verilog">PUT</code> then <code class="sourceCode verilog">GET</code> to show that <code class="sourceCode verilog">1071h</code> appears on the LEDs.</strong> Turn in the video on Canvas.</p>
+<p>Turn in your work using <code class="sourceCode verilog">git</code>:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> add src/<span class="pp">*</span>.v <span class="pp">*</span>.v <span class="pp">*</span>.rpt <span class="pp">*</span>.txt <span class="pp">*</span>.tcl <span class="pp">*</span>.bit <span class="pp">*</span>.xdc <span class="pp">*</span>.vcd</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> commit . <span class="at">-m</span> <span class="st">&quot;Complete&quot;</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> push origin master</span></code></pre></div>
+<p>Indicate on Canvas that your assignment is done.</p>
+</body>
+</html>

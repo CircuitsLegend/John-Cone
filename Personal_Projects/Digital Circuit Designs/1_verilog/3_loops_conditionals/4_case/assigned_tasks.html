@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>case statements in Verilog</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../../../3700.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title"><code class="sourceCode verilog"><span class="kw">case</span></code> statements in Verilog</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#case-statements-in-verilog"><code class="sourceCode verilog"><span class="kw">case</span></code> statements in Verilog</a></li>
+<li><a href="#assigned-tasks">Assigned Tasks</a></li>
+</ul>
+</nav>
+<h1 id="case-statements-in-verilog"><code class="sourceCode verilog"><span class="kw">case</span></code> statements in Verilog</h1>
+<p>Like other languages, Verilog supports <code class="sourceCode verilog"><span class="kw">case</span></code> statements. It is often more efficient and readable to use <code class="sourceCode verilog"><span class="kw">case</span></code> in place of <code class="sourceCode verilog"><span class="kw">if</span></code>/<code class="sourceCode verilog"><span class="kw">else</span></code> conditions. In this assignment, we’ll make a simple arithmetic unit that selects between four operations:</p>
+<ul>
+<li>Case <code class="sourceCode verilog"><span class="dv">00</span></code> – add A+B</li>
+<li>Case <code class="sourceCode verilog"><span class="dv">01</span></code> – subtract A-B</li>
+<li>Case <code class="sourceCode verilog"><span class="dv">10</span></code> – bitwise OR A|B</li>
+<li>Case <code class="sourceCode verilog"><span class="dv">11</span></code> – bitwise AND A&amp;B</li>
+</ul>
+<p>You will create a module named <code class="sourceCode verilog">arithmetic_unit</code> with the behavior specified above. The template file <code class="sourceCode verilog">src/arithmetic_unit.v</code> demonstrates the syntax for <code class="sourceCode verilog"><span class="kw">case</span></code> statements:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">module</span> arithmetic_unit </span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>(</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>   <span class="dt">input</span> <span class="dt">signed</span>  [<span class="dv">3</span>:<span class="dv">0</span>] A,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>   <span class="dt">input</span> <span class="dt">signed</span>  [<span class="dv">3</span>:<span class="dv">0</span>] B,</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>   <span class="dt">input</span>      [<span class="dv">1</span>:<span class="dv">0</span>] sel, </span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>   <span class="dt">output</span> <span class="dt">reg</span> [<span class="dv">3</span>:<span class="dv">0</span>] Q,  </span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>   <span class="dt">output</span> <span class="dt">reg</span>       overflow</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>);</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>   <span class="kw">always</span> @(*) <span class="kw">begin</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>      <span class="kw">case</span> (sel)</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>         <span class="bn">2&#39;b00</span>:</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>           <span class="kw">begin</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>              <span class="co">// Place case 00 assignments here</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>           <span class="kw">end</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>         <span class="bn">2&#39;b01</span>:</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>           <span class="kw">begin</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>             <span class="co">// Place case 01 assignments here</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>           <span class="kw">end</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>         <span class="bn">2&#39;b10</span>:</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>           <span class="kw">begin</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>              <span class="co">// Place case 10 assignments here</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>           <span class="kw">end</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>         <span class="bn">2&#39;b11</span>:</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>           <span class="kw">begin</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>              <span class="co">// Place case 11 assignments here</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>           <span class="kw">end</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>      <span class="kw">endcase</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>   <span class="kw">end</span></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a><span class="kw">endmodule</span></span></code></pre></div>
+<p>In each case you fill in the appropriate assignment. Since this is a non-clocked, combinational block (the sensitivity list is <code class="sourceCode verilog">@(*)</code>), you should use <strong>blocking assignments</strong> with the <code class="sourceCode verilog">=</code> operator as opposed to the non-blocking <code class="sourceCode verilog">&lt;=</code> operator.</p>
+<p>For the ADD and SUBTRACT operations, <strong>you need to implement the <code class="sourceCode verilog">overflow</code> logic</strong>. For signed operations, an <em>overflow</em> occurs when <code class="sourceCode verilog">A</code> and <code class="sourceCode verilog">B</code> have the same sign (both positive or both negative), but the result <code class="sourceCode verilog">Q</code> has opposite sign. For example, consider the binary sum 7+2 using four-bit signals:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="bn">4&#39;b0111</span>+<span class="bn">4&#39;b0010</span> = <span class="bn">4&#39;b1001</span></span></code></pre></div>
+<p>Since the I/O signals are indicated as <code class="sourceCode verilog"><span class="dt">signed</span></code>, they are assumed to be in 2’s complement format, where <strong>the MSB is the sign bit</strong>. In the 2’s complement representation, <code class="sourceCode verilog"><span class="bn">4&#39;b1001</span></code> is equal to <strong>negative</strong> <code class="sourceCode verilog"><span class="bn">4&#39;b0111</span></code>, or -7 decimal. Obviously 7+2 is not -7, so an overflow error has occurred. In your module, the <code class="sourceCode verilog">overflow</code> output should flag all such errors. For the bitwise operations (AND, OR), <code class="sourceCode verilog">overflow</code> should be always zero.</p>
+<h1 id="assigned-tasks">Assigned Tasks</h1>
+<p>Complete the <code class="sourceCode verilog">arithmetic_unit</code> module. A <code class="sourceCode verilog">testbench</code> template is provided; you should fill in the <strong>CREATE STIMULI</strong> block so as to <strong>exhaustively test</strong> the arithmetic module. Since there are a total of ten input bits, you will need 2^10 unique test cases. Write all the I/O signals to a file named <code class="sourceCode verilog">test_result.txt</code>.</p>
+<p>Once your design is verified in simulation, edit <code class="sourceCode verilog">build.tcl</code> and <code class="sourceCode verilog">arithmetic_unit.xdc</code> to implement the design. Your XDC file should make these signal mappings:</p>
+<ul>
+<li><code class="sourceCode verilog">A</code> – switches 0 through 3</li>
+<li><code class="sourceCode verilog">B</code> – switches 4 through 7</li>
+<li><code class="sourceCode verilog">sel</code> – switches 14,15</li>
+<li><code class="sourceCode verilog">Q</code> – LEDs 0 through 3</li>
+<li><code class="sourceCode verilog">overflow</code> – LED 15</li>
+</ul>
+<p>Implement the design, create a bitstream and program the Basys3 board. On the Basys3 board, test these cases:</p>
+<ol type="1">
+<li><code class="sourceCode verilog">sel=<span class="dv">00</span></code>, <code class="sourceCode verilog">A=<span class="bn">4&#39;b1010</span></code>, <code class="sourceCode verilog">B=<span class="bn">4&#39;b0011</span></code></li>
+<li><code class="sourceCode verilog">sel=<span class="dv">00</span></code>, <code class="sourceCode verilog">A=<span class="bn">4&#39;b0110</span></code>, <code class="sourceCode verilog">B=<span class="bn">4&#39;b0011</span></code></li>
+<li><code class="sourceCode verilog">sel=<span class="dv">01</span></code>, <code class="sourceCode verilog">A=<span class="bn">4&#39;b0110</span></code>, <code class="sourceCode verilog">B=<span class="bn">4&#39;b1011</span></code></li>
+<li><code class="sourceCode verilog">sel=<span class="dv">01</span></code>, <code class="sourceCode verilog">A=<span class="bn">4&#39;b1110</span></code>, <code class="sourceCode verilog">B=<span class="bn">4&#39;b1101</span></code></li>
+<li><code class="sourceCode verilog">sel=<span class="dv">10</span></code>, <code class="sourceCode verilog">A=<span class="bn">4&#39;b1010</span></code>, <code class="sourceCode verilog">B=<span class="bn">4&#39;b1100</span></code></li>
+<li><code class="sourceCode verilog">sel=<span class="dv">01</span></code>, <code class="sourceCode verilog">A=<span class="bn">4&#39;b1010</span></code>, <code class="sourceCode verilog">B=<span class="bn">4&#39;b1100</span></code></li>
+</ol>
+<p>Photograph the test cases and save the photos in the working directory as <code class="sourceCode verilog">case1</code>, <code class="sourceCode verilog">case2</code>, etc. Turn in your work using <code class="sourceCode verilog">git</code>:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> add case* src/*.v *.v *.rpt *.txt *.tcl *.bit *.xdc</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> commit . -m <span class="st">&quot;Complete&quot;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> push origin master</span></code></pre></div>
+<p>Indicate on Canvas that your assignment is done.</p>
+</body>
+</html>

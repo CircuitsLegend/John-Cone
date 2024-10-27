@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Debouncing Buttons and Keypresses</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../../../3700.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Debouncing Buttons and Keypresses</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#buttons-keys-and-asynchronous-signals">Buttons, Keys and Asynchronous Signals</a>
+<ul>
+<li><a href="#simple-strategies">Simple Strategies</a></li>
+<li><a href="#debouncing-with-a-timer">Debouncing with a Timer</a>
+<ul>
+<li><a href="#debouncer-state-machine">Debouncer State Machine</a></li>
+<li><a href="#using-localparam-for-descriptive-state-names">Using <code class="sourceCode verilog"><span class="dt">localparam</span></code> for Descriptive State Names</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#assigned-tasks">Assigned Tasks</a>
+<ul>
+<li><a href="#implement-the-debouncer-state-machine">Implement the Debouncer State Machine</a></li>
+<li><a href="#make-a-top-module">Make a <code class="sourceCode verilog">top</code> Module</a></li>
+<li><a href="#testbench-simulation">Testbench Simulation</a>
+<ul>
+<li><a href="#data-visualization-methods">Data Visualization Methods</a></li>
+</ul></li>
+<li><a href="#implement-program-and-test">Implement, Program and Test</a></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="buttons-keys-and-asynchronous-signals">Buttons, Keys and Asynchronous Signals</h1>
+<p>In the time it takes for a user to push a button or type a key, millions of clocks cycles may pass. Usually the user’s intention is to trigger a single event, not millions of them. To make things more complicated, buttons and keys tend to “bounce” when switching between 0 and 1. Instead of a clean transition, the signal may flutter back and forth before settling into a clear logic level. So a good Human Interface Device (HID) should reject the bouncing and reduce a long keypress to a single clean pulse lasting one clock cycle.</p>
+<p>The debouncing problem also introduces the concept of <strong>asynchronous interfaces</strong>. A human user is not synchronized to the digital system’s clock, so the system needs to do some work to detect the information. The same problem occurs whenever signals needs to be exchanged between different digital systems that are on separate clocks. Such systems are not synchronized, hence they are called <strong>asynchronous</strong>.</p>
+<h2 id="simple-strategies">Simple Strategies</h2>
+<p>The simplest debouncing strategy is to make a register assignment, like this:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">module</span> debouncer</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a> (</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>   <span class="dt">input</span>       clk,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>   <span class="dt">input</span>       btn,</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>   <span class="dt">output</span> <span class="dt">reg</span>  btn_db <span class="co">// debounced output</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a> );</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="kw">always</span> @(<span class="kw">posedge</span> clk) <span class="kw">begin</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>     btn_db &lt;= btn;</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="kw">end</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="kw">endmodule</span></span></code></pre></div>
+<p>This <code class="sourceCode verilog"><span class="kw">always</span></code> code is sensitive to <code class="sourceCode verilog"><span class="kw">posedge</span> clk</code>, so the value of <code class="sourceCode verilog">btn</code> is evaluated only at the rising edge of the clock. That should take care of any “fast” bouncing. Slower bouncing can be resolved using a clock divider to make the assignments less frequent.</p>
+<p>This method doesn’t resolve the long button press problem. What we really want is to trigger a <strong>single clock cycle pulse</strong> regardless of how long the button is held down. One way to do this is by adding <strong>delay registers</strong> as in the code below.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">module</span> debouncer</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a> (</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>   <span class="dt">input</span>       clk,</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>   <span class="dt">input</span>       btn,</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>   <span class="dt">output</span> <span class="dt">reg</span>  btn_db <span class="co">// debounced output</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a> );</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="dt">reg</span> btn_d; <span class="co">// button delay by one clock cycle</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="kw">always</span> @(<span class="kw">posedge</span> clk) <span class="kw">begin</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>     btn_d  &lt;= btn;          </span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>     btn_db &lt;= btn &amp; ~btn_d;  <span class="co">// true only when btn rises from 0 to 1</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>  <span class="kw">end</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="kw">endmodule</span></span></code></pre></div>
+<p>Here there are two <strong>concurrent non-blocking assignments</strong>. These assignments take effect in the next (future) clock cycle. That means the <code class="sourceCode verilog">btn_db</code> assignment compares the value of <code class="sourceCode verilog">btn</code> now to its value in the previous cycle. The <code class="sourceCode verilog">btn_db</code> output is only <code class="sourceCode verilog"><span class="dv">1</span></code> for a single clock cycle, when <code class="sourceCode verilog">btn</code> changes from <code class="sourceCode verilog"><span class="dv">0</span></code> to <code class="sourceCode verilog"><span class="dv">1</span></code>.</p>
+<p>This style of debouncer is a good start, but still misses a bounce from time to time, resulting in unintended double-press errors.</p>
+<h2 id="debouncing-with-a-timer">Debouncing with a Timer</h2>
+<p>A more robust debouncing approach is to ensure that the <code class="sourceCode verilog">btn</code> signal is <code class="sourceCode verilog"><span class="dv">1</span></code> continuously for some number of clock cycles, and then settles to zero for a number of cycles. A standard way to count clock cycles is to use an alarm timer. An example is given in <code class="sourceCode verilog">src/tcounter.v</code>, listed here:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">module</span> tcounter</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  #(</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>     <span class="dt">parameter</span> N=<span class="dv">100</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>   (</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>     <span class="dt">input</span>      clk,</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>     <span class="dt">input</span>      rst_l,</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>     <span class="dt">input</span>      clear,</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>     <span class="dt">output</span> <span class="dt">reg</span> done</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>   );</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>   <span class="dt">integer</span>     clk_count;</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>   <span class="kw">always</span> @(<span class="kw">posedge</span> clk, <span class="kw">negedge</span> rst_l) <span class="kw">begin</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>      <span class="kw">if</span> (!rst_l) <span class="kw">begin</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>        done      &lt;= <span class="dv">0</span>;</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>        clk_count &lt;= <span class="dv">0</span>;        </span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>      <span class="kw">end</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>      <span class="kw">else</span> <span class="kw">begin</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>        <span class="kw">if</span> (clear) <span class="kw">begin</span>           </span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>           clk_count &lt;= <span class="dv">0</span>;</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>           done      &lt;= <span class="dv">0</span>;</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>        <span class="kw">end</span></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>        <span class="kw">else</span> <span class="kw">if</span> (clk_count == N) </span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>           done &lt;= <span class="dv">1</span>;</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>        <span class="kw">else</span> </span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>           clk_count &lt;= clk_count + <span class="dv">1</span>;                  </span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>      <span class="kw">end</span></span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>   <span class="kw">end</span>   </span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a><span class="kw">endmodule</span> <span class="co">// tcounter</span></span></code></pre></div>
+<p>In this module, the alarm is reset when <code class="sourceCode verilog">clear</code> is <code class="sourceCode verilog"><span class="dv">1</span></code>. When <code class="sourceCode verilog">clear</code> drops from <code class="sourceCode verilog"><span class="dv">1</span></code> to <code class="sourceCode verilog"><span class="dv">0</span></code>, the timer starts counting. Once <code class="sourceCode verilog">N</code> clock cycles have elapsed, <code class="sourceCode verilog">done</code> rises from <code class="sourceCode verilog"><span class="dv">0</span></code> to <code class="sourceCode verilog"><span class="dv">1</span></code> and stays high until another <code class="sourceCode verilog">clear</code> signal is given.</p>
+<h3 id="debouncer-state-machine">Debouncer State Machine</h3>
+<p>Using this alarm timer, we can design a debouncer state machine with three states:</p>
+<figure>
+<img src="figures/state_machine.svg" style="width:75.0%" alt="State transition diagram for the debouncer." /><figcaption aria-hidden="true">State transition diagram for the debouncer.</figcaption>
+</figure>
+<p>Let’s analyze the behavior in each of these states:</p>
+<ol start="0" type="1">
+<li><strong>WAIT</strong> state. The machine is waiting for a <code class="sourceCode verilog">btn</code> event. There are two outgoing transitions:
+<ul>
+<li>0-to-0 (self loop): While waiting, <code class="sourceCode verilog">clear</code> is held at <code class="sourceCode verilog"><span class="dv">1</span></code> so the <code class="sourceCode verilog">tcounter</code> is prepped.</li>
+<li>0-to-1: When <code class="sourceCode verilog">btn</code> goes to <code class="sourceCode verilog"><span class="dv">1</span></code>, the machine goes to state <code class="sourceCode verilog"><span class="dv">1</span></code> and lowers <code class="sourceCode verilog">clear</code> to start the alarm counter.</li>
+</ul></li>
+<li><strong>PRESS</strong> state. The <code class="sourceCode verilog">btn</code> has gone to <code class="sourceCode verilog"><span class="dv">1</span></code>, and <code class="sourceCode verilog">clear</code> is <code class="sourceCode verilog"><span class="dv">0</span></code> so the <code class="sourceCode verilog">tcounter</code> is running. There are three outgoing transitions:
+<ul>
+<li>1-to-1 (self loop): While <code class="sourceCode verilog">btn</code> is <code class="sourceCode verilog"><span class="dv">1</span></code>, it waits for the alarm <code class="sourceCode verilog">t</code> to complete.</li>
+<li>1-to-0 (bounce reset): If the <code class="sourceCode verilog">btn</code> “bounces” (i.e. goes back to <code class="sourceCode verilog"><span class="dv">0</span></code>) before the alarm signal <code class="sourceCode verilog">t</code>, then the machine resets to state <code class="sourceCode verilog"><span class="dv">0</span></code>.</li>
+<li>1-to-2 (press confirmed): If the <code class="sourceCode verilog">btn</code> was stable at <code class="sourceCode verilog"><span class="dv">1</span></code> until the alarm <code class="sourceCode verilog">t</code>, then the machine is allowed to proceed to state <code class="sourceCode verilog"><span class="dv">2</span></code> when <code class="sourceCode verilog">btn</code> falls to <code class="sourceCode verilog"><span class="dv">0</span></code>. During this transition, the output <code class="sourceCode verilog">btn_db</code> is set to <code class="sourceCode verilog"><span class="dv">1</span></code>, and <code class="sourceCode verilog">clear</code> is set to <code class="sourceCode verilog"><span class="dv">1</span></code> to reset the <code class="sourceCode verilog">tcounter</code>.</li>
+</ul></li>
+<li><strong>RELEASE</strong> state. Now <code class="sourceCode verilog">btn_db</code> is set to <code class="sourceCode verilog"><span class="dv">0</span></code> so that the output pulse lasts a single clock cycle. There are two outgoing transitions:
+<ul>
+<li>2-to-2 (self loop): the machine sets <code class="sourceCode verilog">clear</code> to <code class="sourceCode verilog"><span class="dv">0</span></code> to start the alarm timer. This creates a delay to allow any release bouncing to settle.</li>
+<li>2-to-0 (reset): once the alarm <code class="sourceCode verilog">t</code> is <code class="sourceCode verilog"><span class="dv">1</span></code>, the machine returns to its initial state. The condition is <code class="sourceCode verilog">t &amp; !clear</code> since both <code class="sourceCode verilog">t</code> and <code class="sourceCode verilog">clear</code> are <code class="sourceCode verilog"><span class="dv">1</span></code> upon exiting state 1 (it takes an extra clock cycle for the <code class="sourceCode verilog">tcounter</code> to reset itself).</li>
+</ul></li>
+</ol>
+<h3 id="using-localparam-for-descriptive-state-names">Using <code class="sourceCode verilog"><span class="dt">localparam</span></code> for Descriptive State Names</h3>
+<p>Numerical state values can be confusing when analyzing a complex or high-level FSM. Many designers prefer to use Verilog constants with local scope (i.e. defined only within the module). This is done using the <code class="sourceCode verilog"><span class="dt">localparam</span></code> syntax.</p>
+<p>Instead of using states <code class="sourceCode verilog"><span class="dv">0</span></code>, <code class="sourceCode verilog"><span class="dv">1</span></code> and <code class="sourceCode verilog"><span class="dv">2</span></code>, we give them names:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="dt">localparam</span> WAIT    = <span class="dv">0</span>;</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="dt">localparam</span> PRESS   = <span class="dv">1</span>;</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="dt">localparam</span> RELEASE = <span class="dv">2</span>;</span></code></pre></div>
+<p>Later in the code, these names can be used as if they were numerical constants.</p>
+<h1 id="assigned-tasks">Assigned Tasks</h1>
+<h2 id="implement-the-debouncer-state-machine">Implement the Debouncer State Machine</h2>
+<p>Create a file named <code class="sourceCode verilog">src/debouncer.v</code> and declare a module named <code class="sourceCode verilog">debouncer</code>. Use the code fragment shown below as a template. The first state is already done.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">module</span> debouncer</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  (</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>   <span class="dt">input</span> clk,</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>   <span class="dt">input</span> rst_l,</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>   <span class="dt">input</span> btn,</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>   <span class="dt">output</span> <span class="dt">reg</span> btn_db</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>   );</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>   <span class="dt">reg</span> [<span class="dv">1</span>:<span class="dv">0</span>]  state;</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>   <span class="dt">reg</span>              clear;</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>   <span class="dt">wire</span>       t; <span class="co">// tcounter timer alarm</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>   <span class="dt">localparam</span> WAIT    = <span class="dv">0</span>;</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>   <span class="dt">localparam</span> PRESS   = <span class="dv">1</span>;</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>   <span class="dt">localparam</span> RELEASE = <span class="dv">2</span>;</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>   <span class="co">// tcounter instance   </span></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>   tcounter T1</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>     (</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>      .clk(clk),</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>      .rst_l(rst_l),</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>      .clear(clear),</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>      .done(t)</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>      );</span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>   <span class="kw">initial</span> <span class="kw">begin</span></span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>      state  = WAIT;</span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>      clear  = <span class="dv">1</span>;</span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>      btn_db = <span class="dv">0</span>;      </span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>   <span class="kw">end</span></span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>   <span class="kw">always</span> @(<span class="kw">posedge</span> clk, <span class="kw">negedge</span> rst_l) <span class="kw">begin</span></span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>      <span class="kw">if</span> (!rst_l) <span class="kw">begin</span></span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a>        state  &lt;= WAIT;</span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>        clear  &lt;= <span class="dv">1</span>;</span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a>        btn_db &lt;= <span class="dv">0</span>;        </span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a>      <span class="kw">end</span></span>
+<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a>      <span class="kw">else</span> <span class="kw">begin</span></span>
+<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a>        <span class="kw">case</span> (state)</span>
+<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a>          <span class="dv">WAIT:</span></span>
+<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a>            <span class="kw">begin</span></span>
+<span id="cb5-43"><a href="#cb5-43" aria-hidden="true" tabindex="-1"></a>              <span class="co">// btn_db is set to zero for all transitions</span></span>
+<span id="cb5-44"><a href="#cb5-44" aria-hidden="true" tabindex="-1"></a>              <span class="co">// from this state</span></span>
+<span id="cb5-45"><a href="#cb5-45" aria-hidden="true" tabindex="-1"></a>              btn_db &lt;= <span class="dv">0</span>;</span>
+<span id="cb5-46"><a href="#cb5-46" aria-hidden="true" tabindex="-1"></a>              <span class="kw">if</span> (btn) <span class="kw">begin</span></span>
+<span id="cb5-47"><a href="#cb5-47" aria-hidden="true" tabindex="-1"></a>                 state &lt;= PRESS;  <span class="co">// change state</span></span>
+<span id="cb5-48"><a href="#cb5-48" aria-hidden="true" tabindex="-1"></a>                 clear &lt;= <span class="dv">0</span>;      <span class="co">// start the timer</span></span>
+<span id="cb5-49"><a href="#cb5-49" aria-hidden="true" tabindex="-1"></a>              <span class="kw">end</span></span>
+<span id="cb5-50"><a href="#cb5-50" aria-hidden="true" tabindex="-1"></a>              <span class="kw">else</span></span>
+<span id="cb5-51"><a href="#cb5-51" aria-hidden="true" tabindex="-1"></a>                clear &lt;= <span class="dv">1</span>;              </span>
+<span id="cb5-52"><a href="#cb5-52" aria-hidden="true" tabindex="-1"></a>            <span class="kw">end</span></span>
+<span id="cb5-53"><a href="#cb5-53" aria-hidden="true" tabindex="-1"></a>          <span class="dv">PRESS:</span></span>
+<span id="cb5-54"><a href="#cb5-54" aria-hidden="true" tabindex="-1"></a>            <span class="kw">begin</span></span>
+<span id="cb5-55"><a href="#cb5-55" aria-hidden="true" tabindex="-1"></a>               <span class="co">// YOU DO THIS</span></span>
+<span id="cb5-56"><a href="#cb5-56" aria-hidden="true" tabindex="-1"></a>            <span class="kw">end</span></span>
+<span id="cb5-57"><a href="#cb5-57" aria-hidden="true" tabindex="-1"></a>          <span class="dv">RELEASE:</span></span>
+<span id="cb5-58"><a href="#cb5-58" aria-hidden="true" tabindex="-1"></a>            <span class="kw">begin</span></span>
+<span id="cb5-59"><a href="#cb5-59" aria-hidden="true" tabindex="-1"></a>              <span class="co">// YOU DO THIS</span></span>
+<span id="cb5-60"><a href="#cb5-60" aria-hidden="true" tabindex="-1"></a>            <span class="kw">end</span></span>
+<span id="cb5-61"><a href="#cb5-61" aria-hidden="true" tabindex="-1"></a>          <span class="kw">default</span>:</span>
+<span id="cb5-62"><a href="#cb5-62" aria-hidden="true" tabindex="-1"></a>            <span class="co">// DEFAULT behavior is necessary since we aren&#39;t</span></span>
+<span id="cb5-63"><a href="#cb5-63" aria-hidden="true" tabindex="-1"></a>            <span class="co">// using state 2&#39;b11 (&#39;d3). If the module somehow</span></span>
+<span id="cb5-64"><a href="#cb5-64" aria-hidden="true" tabindex="-1"></a>            <span class="co">// arrives in state 3, we need to give it a way</span></span>
+<span id="cb5-65"><a href="#cb5-65" aria-hidden="true" tabindex="-1"></a>            <span class="co">// back to normal functioning so it can recover</span></span>
+<span id="cb5-66"><a href="#cb5-66" aria-hidden="true" tabindex="-1"></a>            <span class="co">// gracefully from faults. </span></span>
+<span id="cb5-67"><a href="#cb5-67" aria-hidden="true" tabindex="-1"></a>            <span class="kw">begin</span></span>
+<span id="cb5-68"><a href="#cb5-68" aria-hidden="true" tabindex="-1"></a>               btn_db &lt;= <span class="dv">0</span>;</span>
+<span id="cb5-69"><a href="#cb5-69" aria-hidden="true" tabindex="-1"></a>              clear  &lt;= <span class="dv">1</span>;</span>
+<span id="cb5-70"><a href="#cb5-70" aria-hidden="true" tabindex="-1"></a>              state  &lt;= WAIT;</span>
+<span id="cb5-71"><a href="#cb5-71" aria-hidden="true" tabindex="-1"></a>            <span class="kw">end</span></span>
+<span id="cb5-72"><a href="#cb5-72" aria-hidden="true" tabindex="-1"></a>        <span class="kw">endcase</span></span>
+<span id="cb5-73"><a href="#cb5-73" aria-hidden="true" tabindex="-1"></a>      <span class="kw">end</span></span>
+<span id="cb5-74"><a href="#cb5-74" aria-hidden="true" tabindex="-1"></a>   <span class="kw">end</span></span>
+<span id="cb5-75"><a href="#cb5-75" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb5-76"><a href="#cb5-76" aria-hidden="true" tabindex="-1"></a><span class="kw">endmodule</span> <span class="co">// debouncer</span></span></code></pre></div>
+<h2 id="make-a-top-module">Make a <code class="sourceCode verilog">top</code> Module</h2>
+<p>We will use a top-level wrapper module to do the following:</p>
+<ul>
+<li>Contain an instance of <code class="sourceCode verilog">debouncer</code></li>
+<li>Convert active-high <code class="sourceCode verilog">rst</code> button to active-low <code class="sourceCode verilog">rst_l</code> signal</li>
+<li>Monitor <code class="sourceCode verilog">btn_db</code> and use it to toggle an LED output</li>
+</ul>
+<div class="sourceCode" id="cb6"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">module</span> top</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  (</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>   <span class="dt">input</span>      clk,</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>   <span class="dt">input</span>      btn,</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>   <span class="dt">input</span>      rst,     </span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>   <span class="dt">output</span> <span class="dt">reg</span> led</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>   );</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>   <span class="dt">wire</span>       btn_db;</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>   <span class="dt">wire</span>       rst_l;</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>   <span class="kw">assign</span> rst_l = ~rst;</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>   <span class="kw">initial</span> <span class="kw">begin</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>      led = <span class="dv">0</span>;</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>   <span class="kw">end</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>   debouncer db1</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>     (</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>      .clk(clk),</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>      .rst_l(rst_l),</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>      .btn(btn),</span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>      .btn_db(btn_db)</span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>      );</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>   <span class="kw">always</span> @(<span class="kw">posedge</span> clk, <span class="kw">negedge</span> rst_l) <span class="kw">begin</span></span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>      <span class="kw">if</span> (!rst_l) <span class="kw">begin</span></span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>        led &lt;= <span class="dv">0</span>;</span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>      <span class="kw">end</span></span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>      <span class="co">// Toggle the LED if the button is pressed:</span></span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>      <span class="kw">else</span> <span class="kw">begin</span></span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>        <span class="kw">if</span> (btn_db)</span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a>          led &lt;= ~led;        </span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a>      <span class="kw">end</span></span>
+<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a>   <span class="kw">end</span></span>
+<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a><span class="kw">endmodule</span> <span class="co">// top</span></span></code></pre></div>
+<h2 id="testbench-simulation">Testbench Simulation</h2>
+<p>Open <code class="sourceCode verilog">src/testbench.v</code> and find the lines below. These create a stimulus pattern to simulate a bouncing button press. The <code class="sourceCode verilog">btn</code> signal bounces from <code class="sourceCode verilog"><span class="dv">0</span></code> to <code class="sourceCode verilog"><span class="dv">1</span></code> starting at cycle 10, then remains stable at <code class="sourceCode verilog"><span class="dv">1</span></code> until cycle 200, then bounces back to <code class="sourceCode verilog"><span class="dv">0</span></code> until it becomes stable again at cycle 235:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>        <span class="kw">case</span> (clk_count)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>          <span class="dv">10</span>: <span class="co">// start button press</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>            btn &lt;= <span class="dv">1</span>;</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>          <span class="dv">20</span>: <span class="co">// bounce</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>            btn &lt;= <span class="dv">0</span>;</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>          <span class="dv">24</span>: <span class="co">//bounce</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>            btn &lt;= <span class="dv">1</span>;</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>          <span class="dv">30</span>: <span class="co">//bounce</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>            btn &lt;= <span class="dv">0</span>;</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>          <span class="dv">31</span>: <span class="co">// now sustain</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>            btn &lt;= <span class="dv">1</span>;</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>          <span class="dv">200</span>: <span class="co">// release</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>            btn &lt;= <span class="dv">0</span>;</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>          <span class="dv">210</span>: <span class="co">// bounce</span></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>            btn &lt;= <span class="dv">1</span>;</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>          <span class="dv">215</span>: <span class="co">// bounce</span></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>            btn &lt;= <span class="dv">0</span>;</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>          <span class="dv">230</span>: <span class="co">//bounce</span></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>            btn &lt;= <span class="dv">1</span>;</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>          <span class="dv">235</span>: <span class="co">//sustain</span></span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>            btn &lt;= <span class="dv">0</span>;</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>                    </span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>        <span class="kw">endcase</span> <span class="co">// case (clk_count)</span></span></code></pre></div>
+<p>The simulation is run until 500 clock cycles in order to verify that the state returns to zero after the button stabilizes:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>   <span class="co">// DEFINE WHEN TO TERMINATE SIMULATION:</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>   <span class="kw">always</span> @(<span class="kw">posedge</span> clk) <span class="kw">begin</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>      clk_count &lt;= clk_count + <span class="dv">1</span>;</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>      <span class="kw">if</span> (clk_count == <span class="dv">500</span>) <span class="kw">begin</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>        <span class="dt">$fclose</span>(fid);</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>        <span class="dt">$finish</span>;</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>      <span class="kw">end</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>   <span class="kw">end</span></span></code></pre></div>
+<p>Run the simulation using <code class="sourceCode verilog">make</code> and you should see output like this:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="dv">clk:</span>    <span class="dv">11</span> clk diff:    <span class="dv">11</span> state: <span class="dv">0</span> clear: <span class="dv">1</span> t: <span class="dv">0</span> btn: <span class="dv">1</span> led:  <span class="dv">0</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="dv">clk:</span>    <span class="dv">12</span> clk diff:     <span class="dv">1</span> state: <span class="dv">1</span> clear: <span class="dv">0</span> t: <span class="dv">0</span> btn: <span class="dv">1</span> led:  <span class="dv">0</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="dv">clk:</span>    <span class="dv">21</span> clk diff:     <span class="dv">9</span> state: <span class="dv">1</span> clear: <span class="dv">0</span> t: <span class="dv">0</span> btn: <span class="dv">0</span> led:  <span class="dv">0</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="dv">clk:</span>    <span class="dv">22</span> clk diff:     <span class="dv">1</span> state: <span class="dv">0</span> clear: <span class="dv">1</span> t: <span class="dv">0</span> btn: <span class="dv">0</span> led:  <span class="dv">0</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="dv">clk:</span>    <span class="dv">25</span> clk diff:     <span class="dv">3</span> state: <span class="dv">0</span> clear: <span class="dv">1</span> t: <span class="dv">0</span> btn: <span class="dv">1</span> led:  <span class="dv">0</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="dv">clk:</span>    <span class="dv">26</span> clk diff:     <span class="dv">1</span> state: <span class="dv">1</span> clear: <span class="dv">0</span> t: <span class="dv">0</span> btn: <span class="dv">1</span> led:  <span class="dv">0</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="dv">clk:</span>    <span class="dv">31</span> clk diff:     <span class="dv">5</span> state: <span class="dv">1</span> clear: <span class="dv">0</span> t: <span class="dv">0</span> btn: <span class="dv">0</span> led:  <span class="dv">0</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="dv">clk:</span>    <span class="dv">32</span> clk diff:     <span class="dv">1</span> state: <span class="dv">0</span> clear: <span class="dv">1</span> t: <span class="dv">0</span> btn: <span class="dv">1</span> led:  <span class="dv">0</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="dv">clk:</span>    <span class="dv">33</span> clk diff:     <span class="dv">1</span> state: <span class="dv">1</span> clear: <span class="dv">0</span> t: <span class="dv">0</span> btn: <span class="dv">1</span> led:  <span class="dv">0</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a><span class="dv">clk:</span>   <span class="dv">134</span> clk diff:   <span class="dv">101</span> state: <span class="dv">1</span> clear: <span class="dv">0</span> t: <span class="dv">1</span> btn: <span class="dv">1</span> led:  <span class="dv">0</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a><span class="dv">clk:</span>   <span class="dv">201</span> clk diff:    <span class="dv">67</span> state: <span class="dv">1</span> clear: <span class="dv">0</span> t: <span class="dv">1</span> btn: <span class="dv">0</span> led:  <span class="dv">0</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a><span class="dv">clk:</span>   <span class="dv">202</span> clk diff:     <span class="dv">1</span> state: <span class="dv">2</span> clear: <span class="dv">1</span> t: <span class="dv">1</span> btn: <span class="dv">0</span> led:  <span class="dv">0</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a><span class="dv">clk:</span>   <span class="dv">203</span> clk diff:     <span class="dv">1</span> state: <span class="dv">2</span> clear: <span class="dv">0</span> t: <span class="dv">0</span> btn: <span class="dv">0</span> led:  <span class="dv">1</span></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a><span class="dv">clk:</span>   <span class="dv">211</span> clk diff:     <span class="dv">8</span> state: <span class="dv">2</span> clear: <span class="dv">0</span> t: <span class="dv">0</span> btn: <span class="dv">1</span> led:  <span class="dv">1</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a><span class="dv">clk:</span>   <span class="dv">216</span> clk diff:     <span class="dv">5</span> state: <span class="dv">2</span> clear: <span class="dv">0</span> t: <span class="dv">0</span> btn: <span class="dv">0</span> led:  <span class="dv">1</span></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a><span class="dv">clk:</span>   <span class="dv">231</span> clk diff:    <span class="dv">15</span> state: <span class="dv">2</span> clear: <span class="dv">0</span> t: <span class="dv">0</span> btn: <span class="dv">1</span> led:  <span class="dv">1</span></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a><span class="dv">clk:</span>   <span class="dv">236</span> clk diff:     <span class="dv">5</span> state: <span class="dv">2</span> clear: <span class="dv">0</span> t: <span class="dv">0</span> btn: <span class="dv">0</span> led:  <span class="dv">1</span></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a><span class="dv">clk:</span>   <span class="dv">304</span> clk diff:    <span class="dv">68</span> state: <span class="dv">2</span> clear: <span class="dv">0</span> t: <span class="dv">1</span> btn: <span class="dv">0</span> led:  <span class="dv">1</span></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a><span class="dv">clk:</span>   <span class="dv">305</span> clk diff:     <span class="dv">1</span> state: <span class="dv">0</span> clear: <span class="dv">1</span> t: <span class="dv">1</span> btn: <span class="dv">0</span> led:  <span class="dv">1</span></span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a><span class="dv">clk:</span>   <span class="dv">306</span> clk diff:     <span class="dv">1</span> state: <span class="dv">0</span> clear: <span class="dv">1</span> t: <span class="dv">0</span> btn: <span class="dv">0</span> led:  <span class="dv">1</span></span></code></pre></div>
+<p>The output lines are only printed when there is an <strong>interesting signal change</strong> (see explanation in the next section). In the first line of output at clock 11, we see <code class="sourceCode verilog">btn</code> go high, then the FSM state goes to state 1 at clock 12. The <code class="sourceCode verilog">btn</code> bounces a few times causing <code class="sourceCode verilog">state</code> to cycle between 0 and 1.</p>
+<figure>
+<img src="figures/btn_press_wave.png" style="width:95.0%" alt="The button is initially pressed and bounces a few times." /><figcaption aria-hidden="true">The button is initially pressed and bounces a few times.</figcaption>
+</figure>
+<p>The <code class="sourceCode verilog">btn</code> signal stabilizes at clock 33, and the alarm <code class="sourceCode verilog">t</code> is finished at clock 134. At this point the FSM sits in state 1 until <code class="sourceCode verilog">btn</code> goes low at clock 201. At this point the FSM transitions to state 2, and <code class="sourceCode verilog">btn_db</code> is pulsed causing <code class="sourceCode verilog">led</code> to toggle.</p>
+<figure>
+<img src="figures/btn_db_wave.png" style="width:95.0%" alt="The button is released, and the debounced output is pulsed." /><figcaption aria-hidden="true">The button is released, and the debounced output is pulsed.</figcaption>
+</figure>
+<p>The FSM then loiters in state 2 until clock 304 when <code class="sourceCode verilog">t</code> fires again. At clock 305 the <code class="sourceCode verilog">btn</code> has stabilized, and the FSM is back in state 0, ready to detect a new button press.</p>
+<h3 id="data-visualization-methods">Data Visualization Methods</h3>
+<p>In this project we explore several new options for data visualization. Instead of straining over a raw cycle-by-cycle text dump, we can use several methods to make the data more interpretable.</p>
+<h4 id="text-output">Text output</h4>
+<p>To make the text output readable, we only print an output line when an interesting change occurs. To detect these changes, we use a set of <strong>delay registers</strong> and use XOR operations to detect when something has gone from 0-to-1 or 1-to-0:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>   <span class="dt">reg</span> btn_d;   <span class="co">// delayed button (to detect changes)</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>   <span class="dt">reg</span> led_d;   <span class="co">// delayed led</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>   <span class="dt">reg</span> state_d; <span class="co">// delayed debouncer state</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>   <span class="dt">reg</span> clear_d; <span class="co">// delayed clear signal</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>   <span class="dt">reg</span> t_d;     <span class="co">// delayed timer alarm</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>   <span class="dt">reg</span> value_change; <span class="co">// 1 if something changes, 0 otherwise</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>   <span class="kw">always</span> @(*) <span class="kw">begin</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>      value_change = btn ^ btn_d;</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>      value_change = value_change | (led ^ led_d);</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>      value_change = value_change | (DUT.db1.clear ^ clear_d);</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>      value_change = value_change | (DUT.db1.state ^ state_d);</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>      value_change = value_change | (DUT.db1.t ^ t_d);      </span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>   <span class="kw">end</span></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>   <span class="kw">always</span> @(<span class="kw">posedge</span> clk) <span class="kw">begin</span></span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>     <span class="co">// print data summary only if there is a change:</span></span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>     <span class="kw">if</span> (value_change) <span class="kw">begin</span></span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>        clk_count_d &lt;= clk_count;</span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>        <span class="dt">$write</span>(<span class="st">&quot;clk:  %4d&quot;</span>, clk_count);      </span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>        <span class="dt">$write</span>(<span class="st">&quot; clk diff:  %4d&quot;</span>, clk_count-clk_count_d);</span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>        <span class="dt">$write</span>(<span class="st">&quot; state: %1d&quot;</span>, DUT.db1.state);</span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a>        <span class="dt">$write</span>(<span class="st">&quot; clear: %b&quot;</span>, DUT.db1.clear);</span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a>        <span class="co">// ... and so on ... //</span></span>
+<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a>     <span class="kw">end</span></span>
+<span id="cb10-29"><a href="#cb10-29" aria-hidden="true" tabindex="-1"></a>  <span class="kw">end</span></span></code></pre></div>
+<h4 id="tab-delimited-raw-data">Tab-Delimited Raw Data</h4>
+<p>These lines produce a <strong>tab delimited data file</strong> in <code class="sourceCode verilog">test_result.txt</code>:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>        <span class="dt">$fwrite</span>(fid,<span class="st">&quot;%4d&quot;</span>, clk_count);      </span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>        <span class="dt">$fwrite</span>(fid,<span class="st">&quot;</span><span class="ch">\t</span><span class="st">%4d&quot;</span>, clk_count-clk_count_d);</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>        <span class="dt">$fwrite</span>(fid,<span class="st">&quot;</span><span class="ch">\t</span><span class="st">%1d&quot;</span>, DUT.db1.state);</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>        <span class="dt">$fwrite</span>(fid,<span class="st">&quot;</span><span class="ch">\t</span><span class="st">%b&quot;</span>, DUT.db1.clear);</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>        <span class="dt">$fwrite</span>(fid,<span class="st">&quot;</span><span class="ch">\t</span><span class="st">%b&quot;</span>, DUT.db1.t);</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>        <span class="dt">$fwrite</span>(fid,<span class="st">&quot;</span><span class="ch">\t</span><span class="st">%b&quot;</span>, btn);</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>        <span class="dt">$fwrite</span>(fid,<span class="st">&quot;</span><span class="ch">\t</span><span class="st">%d&quot;</span>, led);</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>        <span class="dt">$fwrite</span>(fid,<span class="st">&quot;</span><span class="ch">\n</span><span class="st">&quot;</span>);</span></code></pre></div>
+<p>A tab-delimited file can be imported by many software applications. In Matlab, you can use the <code class="sourceCode verilog">importdata</code> command:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode matlab"><code class="sourceCode matlab"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="va">d</span> <span class="op">=</span> <span class="va">importdata</span>(<span class="ss">&#39;test_result.txt&#39;</span>)<span class="op">;</span></span></code></pre></div>
+<p>The data is loaded into a matrix named <code class="sourceCode verilog">d</code>. You can plot columns from the data using the <code class="sourceCode verilog">plot</code>, <code class="sourceCode verilog">stem</code>, or <code class="sourceCode verilog">stairs</code> commands, for example:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode matlab"><code class="sourceCode matlab"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="va">stairs</span>(<span class="va">d</span>(<span class="op">:,</span><span class="fl">1</span>)<span class="op">,</span><span class="va">d</span>(<span class="op">:,</span><span class="fl">6</span>))</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="va">xlabel</span>(<span class="ss">&#39;Clock Cycle&#39;</span>)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="va">ylabel</span>(<span class="ss">&#39;btn&#39;</span>)</span></code></pre></div>
+<h4 id="run-xsim-in-gui-mode">Run <code class="sourceCode verilog">xsim</code> in GUI mode</h4>
+<p>The Vivado graphical interface can be used by running the simulation in GUI mode:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> gui</span></code></pre></div>
+<p>This allows using the graphical interface to zoom and view signals side-by-side:</p>
+<figure>
+<img src="figures/xsim_gui_waves.png" style="width:95.0%" alt="Vivado xsim in GUI mode." /><figcaption aria-hidden="true">Vivado <code class="sourceCode verilog">xsim</code> in GUI mode.</figcaption>
+</figure>
+<h4 id="use-gtkwave-to-view-vcd-file">Use <code class="sourceCode verilog">gtkwave</code> to view <code class="sourceCode verilog">vcd</code> file</h4>
+<p>These lines in <code class="sourceCode verilog">src/testbench.v</code> direct the simulator to create a <strong>Value Change Dump (VCD)</strong> file for the indicated module. VCD files are used to exchange simulation data between a variety of analysis tools.</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>   <span class="co">// INITIAL SIGNAL CONFIGURATION:</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>   <span class="kw">initial</span> <span class="kw">begin</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>      <span class="dt">$dumpfile</span>(<span class="st">&quot;debounce.vcd&quot;</span>);</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>      <span class="dt">$dumpvars</span>(<span class="dv">1</span>,DUT.db1);</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>      </span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>   <span class="kw">end</span></span></code></pre></div>
+<p>The simulator will save all the signal changes in the <code class="sourceCode verilog">db1</code> module and dump them into <code class="sourceCode verilog">debounce.vcd</code>. There are a number of lightweight programs for viewing VCD files. One of the more popular tools is <code class="sourceCode verilog">gtkwave</code>, which is a multi-platform free option.</p>
+<figure>
+<img src="figures/testbench_vcd_waves.png" style="width:95.0%" alt="Viewing the VCD file in gtkwave" /><figcaption aria-hidden="true">Viewing the VCD file in <code class="sourceCode verilog">gtkwave</code></figcaption>
+</figure>
+<h2 id="implement-program-and-test">Implement, Program and Test</h2>
+<p>Copy the master XDC file, <code class="sourceCode verilog">Basys3_Master.xdc</code> to a new one named <code class="sourceCode verilog">debouncer.xdc</code>. In <code class="sourceCode verilog">debouncer.xdc</code>, locate all the lines corresponding to these ports, and move them to the top of the file:</p>
+<ul>
+<li><code class="sourceCode verilog">clk</code></li>
+<li><code class="sourceCode verilog">btnC</code> – rename to <code class="sourceCode verilog">rst</code></li>
+<li><code class="sourceCode verilog">btnU</code> – rename to <code class="sourceCode verilog">btn</code></li>
+<li><code class="sourceCode verilog">LED[<span class="dv">0</span>]</code> – rename to <code class="sourceCode verilog">led</code></li>
+</ul>
+<p>Then delete all the other lines since we aren’t using any other resources.</p>
+<p>Run <code class="sourceCode verilog">make implement</code> to build your design, and program it onto the Basys3 board. Record a short video showing yourself pressing the button a few times. The LED should toggle ON/OFF each time you press and release the button.</p>
+<p>Turn in your work using <code class="sourceCode verilog">git</code>:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> add src/*.v *.v *.rpt *.txt *.tcl *.bit *.xdc</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> commit . -m <span class="st">&quot;Complete&quot;</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> push origin master</span></code></pre></div>
+<p>Upload your video on Canvas to indicate that your assignment is done.</p>
+</body>
+</html>

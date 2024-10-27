@@ -1,0 +1,75 @@
+﻿  DummyMain.cpp
+C:\Users\jmc13\OneDrive\Documents\School\Programming\STACKS_AND_QUEUES\STACKS_AND_QUEUES\MyQueue.h(85,20): warning C4101: 'e': unreferenced local variable
+C:\Users\jmc13\OneDrive\Documents\School\Programming\STACKS_AND_QUEUES\STACKS_AND_QUEUES\MyQueue.h(78): message : while compiling class template member function 'void MyQueue<float>::push(T)'
+          with
+          [
+              T=float
+          ]
+C:\Users\jmc13\OneDrive\Documents\School\Programming\STACKS_AND_QUEUES\STACKS_AND_QUEUES\DummyMain.cpp(19): message : see reference to function template instantiation 'void MyQueue<float>::push(T)' being compiled
+          with
+          [
+              T=float
+          ]
+C:\Users\jmc13\OneDrive\Documents\School\Programming\STACKS_AND_QUEUES\STACKS_AND_QUEUES\DummyMain.cpp(11): message : see reference to class template instantiation 'MyQueue<float>' being compiled
+C:\Users\jmc13\OneDrive\Documents\School\Programming\STACKS_AND_QUEUES\STACKS_AND_QUEUES\MyQueue.h(64,16): warning C4244: '=': conversion from 'int' to 'T', possible loss of data
+          with
+          [
+              T=float
+          ]
+C:\Users\jmc13\OneDrive\Documents\School\Programming\STACKS_AND_QUEUES\STACKS_AND_QUEUES\MyQueue.h(50): message : while compiling class template member function 'T MyQueue<T>::pop(void)'
+          with
+          [
+              T=float
+          ]
+C:\Users\jmc13\OneDrive\Documents\School\Programming\STACKS_AND_QUEUES\STACKS_AND_QUEUES\DummyMain.cpp(31): message : see reference to function template instantiation 'T MyQueue<T>::pop(void)' being compiled
+          with
+          [
+              T=float
+          ]
+C:\Users\jmc13\OneDrive\Documents\School\Programming\STACKS_AND_QUEUES\STACKS_AND_QUEUES\MyQueue.h(57,20): warning C4101: 'e': unreferenced local variable
+C:\Users\jmc13\OneDrive\Documents\School\Programming\STACKS_AND_QUEUES\STACKS_AND_QUEUES\MyQueue.h(35,20): warning C4101: 'e': unreferenced local variable
+C:\Users\jmc13\OneDrive\Documents\School\Programming\STACKS_AND_QUEUES\STACKS_AND_QUEUES\MyQueue.h(29): message : while compiling class template member function 'T MyQueue<T>::peek(void)'
+          with
+          [
+              T=float
+          ]
+C:\Users\jmc13\OneDrive\Documents\School\Programming\STACKS_AND_QUEUES\STACKS_AND_QUEUES\DummyMain.cpp(23): message : see reference to function template instantiation 'T MyQueue<T>::peek(void)' being compiled
+          with
+          [
+              T=float
+          ]
+C:\Users\jmc13\OneDrive\Documents\School\Programming\STACKS_AND_QUEUES\STACKS_AND_QUEUES\MyStack.h(77,19): warning C4101: 'e': unreferenced local variable
+C:\Users\jmc13\OneDrive\Documents\School\Programming\STACKS_AND_QUEUES\STACKS_AND_QUEUES\MyStack.h(72): message : while compiling class template member function 'void MyStack<float>::push(T)'
+          with
+          [
+              T=float
+          ]
+C:\Users\jmc13\OneDrive\Documents\School\Programming\STACKS_AND_QUEUES\STACKS_AND_QUEUES\DummyMain.cpp(18): message : see reference to function template instantiation 'void MyStack<float>::push(T)' being compiled
+          with
+          [
+              T=float
+          ]
+C:\Users\jmc13\OneDrive\Documents\School\Programming\STACKS_AND_QUEUES\STACKS_AND_QUEUES\DummyMain.cpp(10): message : see reference to class template instantiation 'MyStack<float>' being compiled
+C:\Users\jmc13\OneDrive\Documents\School\Programming\STACKS_AND_QUEUES\STACKS_AND_QUEUES\MyStack.h(57,20): warning C4101: 'e': unreferenced local variable
+C:\Users\jmc13\OneDrive\Documents\School\Programming\STACKS_AND_QUEUES\STACKS_AND_QUEUES\MyStack.h(51): message : while compiling class template member function 'T MyStack<T>::pop(void)'
+          with
+          [
+              T=float
+          ]
+C:\Users\jmc13\OneDrive\Documents\School\Programming\STACKS_AND_QUEUES\STACKS_AND_QUEUES\DummyMain.cpp(30): message : see reference to function template instantiation 'T MyStack<T>::pop(void)' being compiled
+          with
+          [
+              T=float
+          ]
+C:\Users\jmc13\OneDrive\Documents\School\Programming\STACKS_AND_QUEUES\STACKS_AND_QUEUES\MyStack.h(35,20): warning C4101: 'e': unreferenced local variable
+C:\Users\jmc13\OneDrive\Documents\School\Programming\STACKS_AND_QUEUES\STACKS_AND_QUEUES\MyStack.h(29): message : while compiling class template member function 'T MyStack<T>::peek(void)'
+          with
+          [
+              T=float
+          ]
+C:\Users\jmc13\OneDrive\Documents\School\Programming\STACKS_AND_QUEUES\STACKS_AND_QUEUES\DummyMain.cpp(21): message : see reference to function template instantiation 'T MyStack<T>::peek(void)' being compiled
+          with
+          [
+              T=float
+          ]
+  STACKS_AND_QUEUES.vcxproj -> C:\Users\jmc13\OneDrive\Documents\School\Programming\STACKS_AND_QUEUES\x64\Debug\STACKS_AND_QUEUES.exe

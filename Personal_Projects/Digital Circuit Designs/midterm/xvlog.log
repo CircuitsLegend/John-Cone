@@ -1,0 +1,18 @@
+INFO: [VRFC 10-2263] Analyzing Verilog file "/home/joc460/gitclones/3700/midterm/src/clock_divider.v" into library work
+INFO: [VRFC 10-311] analyzing module clock_divider
+INFO: [VRFC 10-2263] Analyzing Verilog file "/home/joc460/gitclones/3700/midterm/src/debouncer.v" into library work
+INFO: [VRFC 10-311] analyzing module debouncer
+INFO: [VRFC 10-2263] Analyzing Verilog file "/home/joc460/gitclones/3700/midterm/src/dim_leds.v" into library work
+INFO: [VRFC 10-311] analyzing module dim_leds
+INFO: [VRFC 10-2263] Analyzing Verilog file "/home/joc460/gitclones/3700/midterm/src/keypad.v" into library work
+INFO: [VRFC 10-311] analyzing module keypad
+INFO: [VRFC 10-2263] Analyzing Verilog file "/home/joc460/gitclones/3700/midterm/src/pmw.v" into library work
+INFO: [VRFC 10-311] analyzing module pwm
+INFO: [VRFC 10-2263] Analyzing Verilog file "/home/joc460/gitclones/3700/midterm/src/pwm_audio.v" into library work
+INFO: [VRFC 10-311] analyzing module pwm_audio
+INFO: [VRFC 10-2263] Analyzing Verilog file "/home/joc460/gitclones/3700/midterm/src/tcounter.v" into library work
+INFO: [VRFC 10-311] analyzing module tcounter
+INFO: [VRFC 10-2263] Analyzing Verilog file "/home/joc460/gitclones/3700/midterm/src/testbench.v" into library work
+INFO: [VRFC 10-311] analyzing module testbench
+INFO: [VRFC 10-2263] Analyzing Verilog file "/home/joc460/gitclones/3700/midterm/src/top.v" into library work
+INFO: [VRFC 10-311] analyzing module top

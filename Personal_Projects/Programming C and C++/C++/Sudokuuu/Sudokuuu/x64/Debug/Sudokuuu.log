@@ -1,0 +1,3 @@
+﻿  main.cpp
+C:\Users\jmc13\OneDrive\Documents\School\Programming\Sudokuuu\Sudokuuu\main.cpp(18,12): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
+  Sudokuuu.vcxproj -> C:\Users\jmc13\OneDrive\Documents\School\Programming\Sudokuuu\x64\Debug\Sudokuuu.exe

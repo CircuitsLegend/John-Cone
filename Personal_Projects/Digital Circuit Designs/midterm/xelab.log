@@ -1,0 +1,20 @@
+Vivado Simulator v2021.1
+Copyright 1986-1999, 2001-2021 Xilinx, Inc. All Rights Reserved.
+Running: /opt/Xilinx/Vivado/2021.1/bin/unwrapped/lnx64.o/xelab -debug typical -s sim testbench 
+Multi-threading is on. Using 18 slave threads.
+Starting static elaboration
+Pass Through NonSizing Optimizer
+Completed static elaboration
+Starting simulation data flow analysis
+Completed simulation data flow analysis
+Time Resolution for simulation is 1ps
+Compiling module work.tcounter
+Compiling module work.debouncer
+Compiling module work.clock_divider
+Compiling module work.keypad
+Compiling module work.pwm_audio
+Compiling module work.pwm
+Compiling module work.dim_leds
+Compiling module work.top
+Compiling module work.testbench
+Built simulation snapshot sim

@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Simple State Machine: Scanning a Keypad Grid</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="../../../3700.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Simple State Machine: Scanning a Keypad Grid</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#reading-from-a-keypad">Reading from a Keypad</a>
+<ul>
+<li><a href="#high-impedance-signals">High-Impedance Signals</a></li>
+<li><a href="#scanning-refresh">Scanning Refresh</a></li>
+<li><a href="#active-low-reset">Active-Low Reset</a></li>
+<li><a href="#clock-divider-timing">Clock Divider Timing</a></li>
+</ul></li>
+<li><a href="#assigned-tasks">Assigned Tasks</a>
+<ul>
+<li><a href="#prepare-the-keypad-module">Prepare the <code class="sourceCode verilog">keypad</code> Module</a>
+<ul>
+<li><a href="#submodules-and-initial-conditions">Submodules and Initial Conditions</a></li>
+<li><a href="#define-the-state-machine-behavior">Define the State Machine Behavior</a></li>
+<li><a href="#define-col-assignments">Define <code class="sourceCode verilog">col</code> assignments</a></li>
+</ul></li>
+<li><a href="#testbench-design">Testbench Design</a>
+<ul>
+<li><a href="#simulating-the-electrical-key-signals">Simulating the Electrical Key Signals</a></li>
+<li><a href="#keypress-timing">Keypress Timing</a></li>
+<li><a href="#key-sequence">Key Sequence</a></li>
+<li><a href="#simulate-the-design">Simulate the Design</a></li>
+</ul></li>
+<li><a href="#synthesize-implement-and-program">Synthesize, Implement and Program</a>
+<ul>
+<li><a href="#create-a-top-module">Create a <code class="sourceCode verilog">top</code> Module</a></li>
+<li><a href="#inspect-the-keypad.xdc-file">Inspect the <code class="sourceCode verilog">keypad.xdc</code> File</a></li>
+<li><a href="#build-and-test">Build and Test</a></li>
+</ul></li>
+<li><a href="#turn-in-your-work">Turn in Your Work</a>
+<ul>
+<li><a href="#make-a-video">Make a Video</a></li>
+<li><a href="#submit-design-files-in-using-git">Submit Design Files in Using <code class="sourceCode verilog">git</code></a></li>
+</ul></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="reading-from-a-keypad">Reading from a Keypad</h1>
+<p>The Digilent Keypad PMOD is a simple grid of buttons:</p>
+<figure>
+<img src="figures/Pmod_KYPD.png" style="width:50.0%" alt="" /><figcaption>Keypad module for Basys3 board</figcaption>
+</figure>
+<p>The keypad’s physical circuit consists of a <strong>switch matrix</strong> organized into four rows and four columns:</p>
+<figure>
+<img src="figures/keypad_schematic_1.png" style="width:75.0%" alt="" /><figcaption>Keypad switch matrix.</figcaption>
+</figure>
+<p>The <strong><code class="sourceCode verilog">row</code></strong> signals are the keypad’s <strong>outputs</strong>. A set of <strong>pull-up resistors</strong> is used to hold all the <code class="sourceCode verilog">row</code> signals HIGH when no button is pressed.</p>
+<figure>
+<img src="figures/keypad_schematic_2.png" style="width:75.0%" alt="" /><figcaption>Keypad switch matrix.</figcaption>
+</figure>
+<p>The <strong><code class="sourceCode verilog">col</code></strong> signals are the keypad’s <strong>inputs</strong>. At any time, a single <code class="sourceCode verilog">col</code> is pulled LOW, so that it can overpower the pull-up resistors on the <code class="sourceCode verilog">row</code> signals. Suppose <code class="sourceCode verilog">col[<span class="dv">0</span>]</code> is pulled LOW, and a key is pressed in that column:</p>
+<figure>
+<img src="figures/keypad_one_key_1.png" style="width:75.0%" alt="" /><figcaption>Keypad with one key pressed.</figcaption>
+</figure>
+<p>The keypad’s <strong>interface module</strong> sets <code class="sourceCode verilog">col[<span class="dv">0</span>]</code> LOW and detects that <code class="sourceCode verilog">row[<span class="dv">1</span>]</code> is HIGH, so that the keypress is uniquely detected at position (1,0).</p>
+<h2 id="high-impedance-signals">High-Impedance Signals</h2>
+<p>You may have noticed that <code class="sourceCode verilog">col[<span class="dv">1</span>]</code>, <code class="sourceCode verilog">col[<span class="dv">2</span>]</code> and <code class="sourceCode verilog">col[<span class="dv">3</span>]</code> are all indicated as <code class="sourceCode verilog">Z</code>, which is not a logic value. Verilog supports <strong>four-value logic</strong> where any <code class="sourceCode verilog"><span class="dt">wire</span></code> or <code class="sourceCode verilog"><span class="dt">reg</span></code> can have one of these values:</p>
+<ul>
+<li><code class="sourceCode verilog"><span class="dv">1</span></code> – logic TRUE, electrical HIGH</li>
+<li><code class="sourceCode verilog"><span class="dv">0</span></code> – logic FALSE, electrical LOW</li>
+<li><code class="sourceCode verilog">X</code> – logic “invalid”, electrical unkown</li>
+<li><code class="sourceCode verilog">Z</code> – logic “undefined”, electrical <strong>high-impedance</strong>, i.e. <strong>disconnected</strong></li>
+</ul>
+<p>In most situations, <code class="sourceCode verilog">X</code> and <code class="sourceCode verilog">Z</code> indicate design mistakes. But there are special gates called <strong>tri-state buffers</strong> that support <code class="sourceCode verilog">Z</code> outputs, allowing us to temporarily connect and disconnect wires within a circuit. The Xilinx FPGA uses tri-state buffers for its <strong>top-level outputs</strong>, so we can write <code class="sourceCode verilog">Z</code> values when needed to control PMOD devices.</p>
+<h2 id="scanning-refresh">Scanning Refresh</h2>
+<p>In order to detect a single keypress, we can pull down one <code class="sourceCode verilog">col</code> signal at a time. The other <code class="sourceCode verilog">col</code> signals need to be <code class="sourceCode verilog">Z</code> so that a single column is isolated. We <strong>scan</strong> rapidly across all the columns following this sequence:</p>
+<ol start="0" type="1">
+<li><code class="sourceCode verilog">col = 0ZZZ</code></li>
+<li><code class="sourceCode verilog">col = Z0ZZ</code></li>
+<li><code class="sourceCode verilog">col = ZZ0Z</code></li>
+<li><code class="sourceCode verilog">col = ZZZ0</code></li>
+</ol>
+<p>After scanning through each column, we repeat the sequence indefinitely to <strong>refresh</strong> the key detection. This loop can be modeled as a simple <strong>Finite State Machine (FSM).</strong> A Finite State Machine is visually represented using a state transition diagram like the one below. In this diagram style, each circle is a <em>state</em>, and the label within the circle is the state’s identifier (usually a name or integer value). The edges in the graph are <em>transitions</em>, and each transition is labeled with two parts: a <em>condition</em>, then a <code class="sourceCode verilog">/</code>, and then an <em>assignment</em>. The <em>condition</em> is the logical test that must be TRUE in order for the transition to occur. The <em>assignment</em> is the change in output signals due to the transition. For clarity, conditions are indicated in blue color.</p>
+<figure>
+<img src="figures/state_machine.svg" style="width:75.0%" alt="" /><figcaption>State transition diagram for scanning refresh process.</figcaption>
+</figure>
+<p>In this diagram, the process is initialized in state 0 (indicated by the <code class="sourceCode verilog">init</code> condition). A state transition occurs whenever the <code class="sourceCode verilog">scan</code> signal is high. The frequency of <code class="sourceCode verilog">scan</code> dictates the speed for the keypad refresh process.</p>
+<h2 id="active-low-reset">Active-Low Reset</h2>
+<p>Notice that the state diagram indicates <code class="sourceCode verilog">!rst_l</code> as a condition to enter state 0. In digital systems there is usually a <strong>global reset signal</strong> that uses <strong>active low logic</strong>, so the system is reset whenever <code class="sourceCode verilog">rst_l</code> is LOW. The suffix <code class="sourceCode verilog">_l</code> is used to indicate an active-low signal. It’s also common to see other suffixes like <code class="sourceCode verilog">_b</code> (for “bar”), or <code class="sourceCode verilog">_inv</code> (for “inverted”). <strong>Whenever a signal is active-low, it should be named with a <code class="sourceCode verilog">_l</code> suffix to clarify its behavior.</strong></p>
+<p><strong>Why active-low reset?</strong> When a system is first powered up, all signals are effectively <code class="sourceCode verilog"><span class="dv">0</span></code>, and at different times their electrical levels may appear to be <code class="sourceCode verilog"><span class="dv">0</span></code> or <code class="sourceCode verilog"><span class="dv">1</span></code>. By holding <code class="sourceCode verilog">rst_l</code> at <code class="sourceCode verilog"><span class="dv">0</span></code>, the system can be maintained in a reset condition until the supply voltage is stable.</p>
+<p>In the state transition diagram, there is an implied transition from every state back to <code class="sourceCode verilog"><span class="dv">0</span></code> whenever <code class="sourceCode verilog">rst_l</code> is <code class="sourceCode verilog"><span class="dv">0</span></code>. These transitions are hidden in the diagram, but are indicated in the <code class="sourceCode verilog">init | !rst_l</code> condition.</p>
+<h2 id="clock-divider-timing">Clock Divider Timing</h2>
+<p>The <strong>refresh period</strong> is the time it takes to repeat from <code class="sourceCode verilog">col</code> 0 back to <code class="sourceCode verilog">col</code> 0 again. The refresh period should be much faster than the time it takes for a human finger to press and release a key. On the other hand, the refresh period should be much slower than the system clock, since the Basys3 electrical signals are slower than the internal FPGA clock.</p>
+<p>A good refresh time might be around 12ms. To complete a scan of all four <code class="sourceCode verilog">col</code> wires in 12ms, each individual <code class="sourceCode verilog">col</code> needs to be scanned for (12ms)/4 = 3ms. To create the appropriate timing, we will use a <strong>clock divider</strong> module:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">module</span> clock_divider</span>
+<span id="cb1-2"><a href="#cb1-2"></a>#(</span>
+<span id="cb1-3"><a href="#cb1-3"></a>   <span class="dt">parameter</span> N=<span class="dv">300</span>_<span class="dv">000</span></span>
+<span id="cb1-4"><a href="#cb1-4"></a> )</span>
+<span id="cb1-5"><a href="#cb1-5"></a> (</span>
+<span id="cb1-6"><a href="#cb1-6"></a>  <span class="dt">input</span>      clk,</span>
+<span id="cb1-7"><a href="#cb1-7"></a>  <span class="dt">input</span>      rst_l,</span>
+<span id="cb1-8"><a href="#cb1-8"></a>  <span class="dt">output</span> <span class="dt">reg</span> div_clk</span>
+<span id="cb1-9"><a href="#cb1-9"></a>  );</span>
+<span id="cb1-10"><a href="#cb1-10"></a>   </span>
+<span id="cb1-11"><a href="#cb1-11"></a>   <span class="dt">integer</span>   clk_count;</span>
+<span id="cb1-12"><a href="#cb1-12"></a>   <span class="kw">initial</span> <span class="kw">begin</span></span>
+<span id="cb1-13"><a href="#cb1-13"></a>      clk_count = <span class="dv">0</span>;</span>
+<span id="cb1-14"><a href="#cb1-14"></a>      div_clk   = <span class="dv">0</span>;</span>
+<span id="cb1-15"><a href="#cb1-15"></a>   <span class="kw">end</span></span>
+<span id="cb1-16"><a href="#cb1-16"></a>   </span>
+<span id="cb1-17"><a href="#cb1-17"></a>   <span class="kw">always</span> @(<span class="kw">posedge</span> clk, <span class="kw">negedge</span> rst_l) <span class="kw">begin</span></span>
+<span id="cb1-18"><a href="#cb1-18"></a>      <span class="co">// RESET BEHAVIOR:</span></span>
+<span id="cb1-19"><a href="#cb1-19"></a>      <span class="kw">if</span> (!rst_l) <span class="kw">begin</span></span>
+<span id="cb1-20"><a href="#cb1-20"></a>         clk_count &lt;= <span class="dv">0</span>;</span>
+<span id="cb1-21"><a href="#cb1-21"></a>         div_clk   &lt;= <span class="dv">0</span>;</span>
+<span id="cb1-22"><a href="#cb1-22"></a>      <span class="kw">end</span></span>
+<span id="cb1-23"><a href="#cb1-23"></a>      <span class="co">// NORMAL BEHAVIOR:</span></span>
+<span id="cb1-24"><a href="#cb1-24"></a>      <span class="co">// Pulse div_clk every N clock cycles.</span></span>
+<span id="cb1-25"><a href="#cb1-25"></a>      <span class="kw">else</span> <span class="kw">begin</span></span>
+<span id="cb1-26"><a href="#cb1-26"></a>         <span class="kw">if</span> (clk_count == N) <span class="kw">begin</span></span>
+<span id="cb1-27"><a href="#cb1-27"></a>            clk_count &lt;= <span class="dv">0</span>;</span>
+<span id="cb1-28"><a href="#cb1-28"></a>            div_clk   &lt;= <span class="dv">1</span>;</span>
+<span id="cb1-29"><a href="#cb1-29"></a>         <span class="kw">end</span> </span>
+<span id="cb1-30"><a href="#cb1-30"></a>         <span class="kw">else</span> <span class="kw">begin</span></span>
+<span id="cb1-31"><a href="#cb1-31"></a>            clk_count &lt;= clk_count + <span class="dv">1</span>;</span>
+<span id="cb1-32"><a href="#cb1-32"></a>            div_clk   &lt;= <span class="dv">0</span>;</span>
+<span id="cb1-33"><a href="#cb1-33"></a>         <span class="kw">end</span> </span>
+<span id="cb1-34"><a href="#cb1-34"></a>      <span class="kw">end</span> </span>
+<span id="cb1-35"><a href="#cb1-35"></a>   <span class="kw">end</span> <span class="co">// always @ (posedge clk, negedge rst_l)</span></span>
+<span id="cb1-36"><a href="#cb1-36"></a>   </span>
+<span id="cb1-37"><a href="#cb1-37"></a><span class="kw">endmodule</span> <span class="co">// clock_divider</span></span></code></pre></div>
+<p>The <code class="sourceCode verilog">clock_divider</code> module sets <code class="sourceCode verilog">clk_div</code> HIGH every <code class="sourceCode verilog">N</code> clock cycles. On the Basys3, the system clock frequency is <span class="math inline"><em>f</em><sub><em>c</em></sub>=</span> 100MHz, with a period of <span class="math inline"><em>T</em><sub><em>c</em></sub>=</span> 10ns. To obtain a 3ms scanning period, we need <span class="math inline"><em>T</em><sub><em>c</em></sub> × <em>N</em>=</span>(10ns)*<code class="sourceCode verilog">N</code> = 3ms, or <code class="sourceCode verilog">N=<span class="dv">300000</span></code>. This is set as the default value for parameter <code class="sourceCode verilog">N</code> in the module declaration.</p>
+<h1 id="assigned-tasks">Assigned Tasks</h1>
+<p>In the <code class="sourceCode verilog">src</code> subdirectory, create a file named <code class="sourceCode verilog">clock_divider.v</code> and enter the code shown above. <strong>It is prefered for you to enter the code manually so that you fully understand the module.</strong></p>
+<h2 id="prepare-the-keypad-module">Prepare the <code class="sourceCode verilog">keypad</code> Module</h2>
+<p>Create a file named <code class="sourceCode verilog">src/keypad.v</code> to implement the <code class="sourceCode verilog">keypad</code> interface. Use this declaration template:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">module</span> keypad</span>
+<span id="cb2-2"><a href="#cb2-2"></a>  #(</span>
+<span id="cb2-3"><a href="#cb2-3"></a>     <span class="dt">parameter</span> N=<span class="dv">300</span>_<span class="dv">000</span></span>
+<span id="cb2-4"><a href="#cb2-4"></a>   )</span>
+<span id="cb2-5"><a href="#cb2-5"></a>   (</span>
+<span id="cb2-6"><a href="#cb2-6"></a>     <span class="dt">input</span>             clk,</span>
+<span id="cb2-7"><a href="#cb2-7"></a>     <span class="dt">input</span>             rst_l,</span>
+<span id="cb2-8"><a href="#cb2-8"></a>     <span class="dt">input</span>      [<span class="dv">3</span>:<span class="dv">0</span>]  row,</span>
+<span id="cb2-9"><a href="#cb2-9"></a>     <span class="dt">output</span>     [<span class="dv">3</span>:<span class="dv">0</span>]  col,</span>
+<span id="cb2-10"><a href="#cb2-10"></a>     <span class="dt">output</span> <span class="dt">reg</span> [<span class="dv">15</span>:<span class="dv">0</span>] keys</span>
+<span id="cb2-11"><a href="#cb2-11"></a>   );</span>
+<span id="cb2-12"><a href="#cb2-12"></a></span>
+<span id="cb2-13"><a href="#cb2-13"></a>   <span class="dt">wire</span>          scan;</span>
+<span id="cb2-14"><a href="#cb2-14"></a>   <span class="dt">reg</span>   [<span class="dv">1</span>:<span class="dv">0</span>]   state;</span>
+<span id="cb2-15"><a href="#cb2-15"></a></span>
+<span id="cb2-16"><a href="#cb2-16"></a><span class="kw">endmodule</span></span></code></pre></div>
+<p>The module has a <code class="sourceCode verilog">col</code> output to drive the keypad columns, and a <code class="sourceCode verilog">row</code> input to receive signals from the keypad rows. The detected keypress(es) are indicated in an output named <code class="sourceCode verilog">keys</code>. There are 16 keys; if a key is pressed then the corresponding bit position in <code class="sourceCode verilog">keys</code> is set to <code class="sourceCode verilog"><span class="dv">1</span></code>.</p>
+<h3 id="submodules-and-initial-conditions">Submodules and Initial Conditions</h3>
+<p>Declare a <code class="sourceCode verilog">clock_divider</code> submodule and initialize the <code class="sourceCode verilog">state</code> and <code class="sourceCode verilog">keys</code> signals:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb3-1"><a href="#cb3-1"></a>   <span class="kw">initial</span> <span class="kw">begin</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a>      state = <span class="dv">0</span>;</span>
+<span id="cb3-3"><a href="#cb3-3"></a>      keys  = <span class="dv">0</span>;</span>
+<span id="cb3-4"><a href="#cb3-4"></a>   <span class="kw">end</span></span>
+<span id="cb3-5"><a href="#cb3-5"></a>     </span>
+<span id="cb3-6"><a href="#cb3-6"></a>   clock_divider clkdiv(.clk(clk),.rst_l(rst_l),.div_clk(scan));</span></code></pre></div>
+<p>The global signals <code class="sourceCode verilog">clk</code> and <code class="sourceCode verilog">rst_l</code> are “passed through” from the top to submodules. The <code class="sourceCode verilog">clock_divider</code> output <code class="sourceCode verilog">div_clk</code> is connected to the <code class="sourceCode verilog">scan</code> signal. Since <code class="sourceCode verilog">scan</code> is defined in a submodule, it is considered a <code class="sourceCode verilog"><span class="dt">wire</span></code> within the scope of <code class="sourceCode verilog">keypad</code>.</p>
+<h3 id="define-the-state-machine-behavior">Define the State Machine Behavior</h3>
+<p>Next, implement the state transition diagram using a <strong><code class="sourceCode verilog"><span class="kw">case</span></code> statement</strong> as shown below. The behavior for state 0 is already completed, you should fill in the remaining states. In the code below, the reset behavior is implemented using <code class="sourceCode verilog"><span class="kw">if</span>/<span class="kw">else</span> <span class="kw">if</span></code> statements. Since the state transitions only occur when <code class="sourceCode verilog">scan</code> is high, it is used as a condition for<br />
+the entire <code class="sourceCode verilog"><span class="kw">case</span></code> block:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb4-1"><a href="#cb4-1"></a>   <span class="kw">always</span> @(<span class="kw">posedge</span> clk, <span class="kw">negedge</span> rst_l) <span class="kw">begin</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a>      <span class="kw">if</span> (!rst_l) <span class="kw">begin</span>         </span>
+<span id="cb4-3"><a href="#cb4-3"></a>         state &lt;= <span class="dv">0</span>;</span>
+<span id="cb4-4"><a href="#cb4-4"></a>         keys  &lt;= <span class="dv">0</span>;</span>
+<span id="cb4-5"><a href="#cb4-5"></a>      <span class="kw">end</span></span>
+<span id="cb4-6"><a href="#cb4-6"></a>      <span class="kw">else</span> <span class="kw">if</span> (scan) <span class="kw">begin</span></span>
+<span id="cb4-7"><a href="#cb4-7"></a>         <span class="kw">case</span> (state)</span>
+<span id="cb4-8"><a href="#cb4-8"></a>           <span class="dv">0</span>:</span>
+<span id="cb4-9"><a href="#cb4-9"></a>             <span class="kw">begin</span></span>
+<span id="cb4-10"><a href="#cb4-10"></a>                <span class="co">// Set the key values for this column:</span></span>
+<span id="cb4-11"><a href="#cb4-11"></a>                keys[<span class="bn">4&#39;h1</span>] &lt;= ~row[<span class="dv">0</span>];</span>
+<span id="cb4-12"><a href="#cb4-12"></a>                keys[<span class="bn">4&#39;h4</span>] &lt;= ~row[<span class="dv">1</span>];</span>
+<span id="cb4-13"><a href="#cb4-13"></a>                keys[<span class="bn">4&#39;h7</span>] &lt;= ~row[<span class="dv">2</span>];</span>
+<span id="cb4-14"><a href="#cb4-14"></a>                keys[<span class="bn">4&#39;h0</span>] &lt;= ~row[<span class="dv">3</span>];</span>
+<span id="cb4-15"><a href="#cb4-15"></a></span>
+<span id="cb4-16"><a href="#cb4-16"></a>                <span class="co">// Proceed to the next state:</span></span>
+<span id="cb4-17"><a href="#cb4-17"></a>                state    &lt;= <span class="dv">1</span>;                </span>
+<span id="cb4-18"><a href="#cb4-18"></a>             <span class="kw">end</span></span>
+<span id="cb4-19"><a href="#cb4-19"></a>           <span class="dv">1</span>:</span>
+<span id="cb4-20"><a href="#cb4-20"></a>             <span class="kw">begin</span></span>
+<span id="cb4-21"><a href="#cb4-21"></a>               <span class="co">// You do this</span></span>
+<span id="cb4-22"><a href="#cb4-22"></a>             <span class="kw">end</span></span>
+<span id="cb4-23"><a href="#cb4-23"></a>           <span class="dv">2</span>: </span>
+<span id="cb4-24"><a href="#cb4-24"></a>             <span class="kw">begin</span></span>
+<span id="cb4-25"><a href="#cb4-25"></a>               <span class="co">// You do this</span></span>
+<span id="cb4-26"><a href="#cb4-26"></a>              <span class="kw">end</span></span>
+<span id="cb4-27"><a href="#cb4-27"></a>           <span class="dv">3</span>:</span>
+<span id="cb4-28"><a href="#cb4-28"></a>             <span class="kw">begin</span></span>
+<span id="cb4-29"><a href="#cb4-29"></a>               <span class="co">// You do this</span></span>
+<span id="cb4-30"><a href="#cb4-30"></a>             <span class="kw">end</span></span>
+<span id="cb4-31"><a href="#cb4-31"></a>         <span class="kw">endcase</span></span>
+<span id="cb4-32"><a href="#cb4-32"></a>      <span class="kw">end</span></span>
+<span id="cb4-33"><a href="#cb4-33"></a>   <span class="kw">end</span></span></code></pre></div>
+<h3 id="define-col-assignments">Define <code class="sourceCode verilog">col</code> assignments</h3>
+<p>To complete the <code class="sourceCode verilog">keypad</code> design, the <code class="sourceCode verilog">col</code> signals need to be appropriately assigned. In each of the module’s states, only one of the <code class="sourceCode verilog">col</code> signals is assigned <code class="sourceCode verilog"><span class="dv">0</span></code>, while the others are all <code class="sourceCode verilog">Z</code>. This is achieved using <code class="sourceCode verilog"><span class="kw">assign</span></code> statements with the conditional <code class="sourceCode verilog">?</code> operator:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb5-1"><a href="#cb5-1"></a>   <span class="kw">assign</span> col[<span class="dv">0</span>] = (state == <span class="dv">0</span>) ? <span class="dv">0</span> : <span class="bn">1&#39;bz</span>;</span>
+<span id="cb5-2"><a href="#cb5-2"></a>   <span class="kw">assign</span> col[<span class="dv">1</span>] = (state == <span class="dv">1</span>) ? <span class="dv">0</span> : <span class="bn">1&#39;bz</span>;</span>
+<span id="cb5-3"><a href="#cb5-3"></a>   <span class="kw">assign</span> col[<span class="dv">2</span>] = (state == <span class="dv">2</span>) ? <span class="dv">0</span> : <span class="bn">1&#39;bz</span>;</span>
+<span id="cb5-4"><a href="#cb5-4"></a>   <span class="kw">assign</span> col[<span class="dv">3</span>] = (state == <span class="dv">3</span>) ? <span class="dv">0</span> : <span class="bn">1&#39;bz</span>;</span></code></pre></div>
+<p><strong>Since the <code class="sourceCode verilog">col</code> signals use <code class="sourceCode verilog">Z</code> values, they can only be assigned as top-level outputs.</strong> They can’t be safely assigned as registers in the clocked <code class="sourceCode verilog"><span class="kw">always</span></code> block. The best practice is to use <code class="sourceCode verilog"><span class="kw">assign</span></code> statements to define tri-state outputs separately from the clocked logic, as is done here.</p>
+<p>Enter the lines above to complete the <code class="sourceCode verilog">keypad</code> module definition.</p>
+<h2 id="testbench-design">Testbench Design</h2>
+<p>A testbench is provided in the file <code class="sourceCode verilog">src/testbench.v</code>. Open the file and study its contents. The testbench simulates a succession of keypress events in the order: no key, then col 0: row 0, 1, 2, 3; then no key, followed by col 1: row 0, 1, 2, 3; and so on.</p>
+<h3 id="simulating-the-electrical-key-signals">Simulating the Electrical Key Signals</h3>
+<p>To simulate these keypresses, we first define the depressed key position using variables <code class="sourceCode verilog">row_pressed</code> and <code class="sourceCode verilog">col_pressed</code>. When the <code class="sourceCode verilog">keypad</code> module scans across the columns, the electrical row signals should be <code class="sourceCode verilog"><span class="dv">1111</span></code> <strong>except when the pressed column is being scanned.</strong> To simulate this electrical activity, we make conditonal assignments to <code class="sourceCode verilog">row_wire</code> as shown here:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb6-1"><a href="#cb6-1"></a>   <span class="co">// Simulated row/col for keypress position:</span></span>
+<span id="cb6-2"><a href="#cb6-2"></a>   <span class="dt">reg</span> [<span class="dv">3</span>:<span class="dv">0</span>]  row_pressed;</span>
+<span id="cb6-3"><a href="#cb6-3"></a>   <span class="dt">reg</span> [<span class="dv">3</span>:<span class="dv">0</span>]  col_pressed;</span>
+<span id="cb6-4"><a href="#cb6-4"></a>   </span>
+<span id="cb6-5"><a href="#cb6-5"></a>   <span class="co">// Interface wires:</span></span>
+<span id="cb6-6"><a href="#cb6-6"></a>   <span class="dt">wire</span> [<span class="dv">3</span>:<span class="dv">0</span>]  row_wire;</span>
+<span id="cb6-7"><a href="#cb6-7"></a>   <span class="dt">wire</span> [<span class="dv">3</span>:<span class="dv">0</span>]  col_wire;</span>
+<span id="cb6-8"><a href="#cb6-8"></a>   <span class="dt">wire</span> [<span class="dv">15</span>:<span class="dv">0</span>] keys;</span>
+<span id="cb6-9"><a href="#cb6-9"></a>   <span class="dt">wire</span>        refresh;</span>
+<span id="cb6-10"><a href="#cb6-10"></a>   </span>
+<span id="cb6-11"><a href="#cb6-11"></a>   <span class="co">// The row wire can be pulled down only if the column wire matches</span></span>
+<span id="cb6-12"><a href="#cb6-12"></a>   <span class="co">// the column where the button is pressed:</span></span>
+<span id="cb6-13"><a href="#cb6-13"></a>   <span class="kw">assign</span> row_wire[<span class="dv">0</span>] = &amp;(col_wire===col_pressed) ? row_pressed[<span class="dv">0</span>] : <span class="dv">1</span> ;</span>
+<span id="cb6-14"><a href="#cb6-14"></a>   <span class="kw">assign</span> row_wire[<span class="dv">1</span>] = &amp;(col_wire===col_pressed) ? row_pressed[<span class="dv">1</span>] : <span class="dv">1</span> ;</span>
+<span id="cb6-15"><a href="#cb6-15"></a>   <span class="kw">assign</span> row_wire[<span class="dv">2</span>] = &amp;(col_wire===col_pressed) ? row_pressed[<span class="dv">2</span>] : <span class="dv">1</span> ;</span>
+<span id="cb6-16"><a href="#cb6-16"></a>   <span class="kw">assign</span> row_wire[<span class="dv">3</span>] = &amp;(col_wire===col_pressed) ? row_pressed[<span class="dv">3</span>] : <span class="dv">1</span> ;</span></code></pre></div>
+<p>Here, <strong>the triple-equal operator <code class="sourceCode verilog">===</code> is used to compare 4-value logic vectors</strong>. If the <code class="sourceCode verilog">keypad</code> output <code class="sourceCode verilog">col_wire</code> matches <code class="sourceCode verilog">col_pressed</code> in all positions, then <code class="sourceCode verilog">row_wire</code> is assigned to equal <code class="sourceCode verilog">row_pressed</code>. Otherwise <code class="sourceCode verilog">row_wire</code> is assigned <code class="sourceCode verilog"><span class="dv">1111</span></code>.</p>
+<h3 id="keypress-timing">Keypress Timing</h3>
+<p>For each simulated keypress, we need to give the <code class="sourceCode verilog">keypad</code> module enough time to scan through all the columns and complete a full refresh. To achieve the required timing, we use a <code class="sourceCode verilog">clock_divider</code> in the <code class="sourceCode verilog">testbench</code> to generate a timing signal called <code class="sourceCode verilog">refresh</code>:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb7-1"><a href="#cb7-1"></a>   <span class="co">// Timing to change key value every</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a>   <span class="co">// refresh interval</span></span>
+<span id="cb7-3"><a href="#cb7-3"></a>   clock_divider #(.N(<span class="dv">1</span>_<span class="dv">200</span>_<span class="dv">000</span>)) clkdiv</span>
+<span id="cb7-4"><a href="#cb7-4"></a>       (.clk(clk),.rst_l(rst_l),.div_clk(refresh));</span>
+<span id="cb7-5"><a href="#cb7-5"></a>   </span></code></pre></div>
+<p>This clock divider’s timing parameter is set 1,200,000, equal to four times the <code class="sourceCode verilog">keypad</code> scan period. This means we’ll change the keypress after the <code class="sourceCode verilog">keypad</code> completes its scan of all four columns.</p>
+<h3 id="key-sequence">Key Sequence</h3>
+<p>Further down in the testbench, we see a nested pair of <code class="sourceCode verilog"><span class="kw">case</span></code> statements:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb8-1"><a href="#cb8-1"></a>       <span class="kw">if</span> (refresh) <span class="kw">begin</span></span>
+<span id="cb8-2"><a href="#cb8-2"></a>          <span class="kw">case</span> (row_pressed)</span>
+<span id="cb8-3"><a href="#cb8-3"></a>            <span class="bn">4&#39;b1111</span>: row_pressed &lt;= <span class="bn">4&#39;b1110</span>; <span class="co">// first row_pressed</span></span>
+<span id="cb8-4"><a href="#cb8-4"></a>            <span class="bn">4&#39;b1110</span>: row_pressed &lt;= <span class="bn">4&#39;b1101</span>; <span class="co">// second row_pressed</span></span>
+<span id="cb8-5"><a href="#cb8-5"></a>            <span class="bn">4&#39;b1101</span>: row_pressed &lt;= <span class="bn">4&#39;b1011</span>; <span class="co">// third row_pressed</span></span>
+<span id="cb8-6"><a href="#cb8-6"></a>            <span class="bn">4&#39;b1011</span>: row_pressed &lt;= <span class="bn">4&#39;b0111</span>; <span class="co">// fourth row_pressed</span></span>
+<span id="cb8-7"><a href="#cb8-7"></a>            <span class="bn">4&#39;b0111</span>: <span class="co">// After the last row, we change column and </span></span>
+<span id="cb8-8"><a href="#cb8-8"></a>                <span class="kw">begin</span>  <span class="co">// start going through the rows again:</span></span>
+<span id="cb8-9"><a href="#cb8-9"></a>                   row_pressed &lt;= <span class="bn">4&#39;b1111</span>; </span>
+<span id="cb8-10"><a href="#cb8-10"></a>               </span>
+<span id="cb8-11"><a href="#cb8-11"></a>                   <span class="kw">case</span> (col_pressed)</span>
+<span id="cb8-12"><a href="#cb8-12"></a>                     <span class="bn">4&#39;bZZZ0</span> : col_pressed &lt;= <span class="bn">4&#39;bZZ0Z</span>;</span>
+<span id="cb8-13"><a href="#cb8-13"></a>                     <span class="bn">4&#39;bZZ0Z</span> : col_pressed &lt;= <span class="bn">4&#39;bZ0ZZ</span>;</span>
+<span id="cb8-14"><a href="#cb8-14"></a>                     <span class="bn">4&#39;bZ0ZZ</span> : col_pressed &lt;= <span class="bn">4&#39;b0ZZZ</span>;</span>
+<span id="cb8-15"><a href="#cb8-15"></a>                     <span class="bn">4&#39;b0ZZZ</span> : col_pressed &lt;= <span class="bn">4&#39;bZZZ0</span>;</span>
+<span id="cb8-16"><a href="#cb8-16"></a>                   <span class="kw">endcase</span> <span class="co">// case (col_pressed)</span></span>
+<span id="cb8-17"><a href="#cb8-17"></a>                <span class="kw">end</span></span>
+<span id="cb8-18"><a href="#cb8-18"></a>          <span class="kw">endcase</span></span>
+<span id="cb8-19"><a href="#cb8-19"></a>       <span class="kw">end</span></span></code></pre></div>
+<p>Whenever the <code class="sourceCode verilog">refresh</code> signal is <code class="sourceCode verilog"><span class="dv">1</span></code>, this code block is evaluated. It scans through each of the four <code class="sourceCode verilog">row_pressed</code> values. On the final row, it reverts to a no-keypress state, and advances <code class="sourceCode verilog">col_pressed</code> to the next column. Then the sequence of <code class="sourceCode verilog">row_pressed</code> states is repeated.</p>
+<p>Notice that this simple state-machine uses <code class="sourceCode verilog">Z</code> values in its registers. This was not allowed in the <code class="sourceCode verilog">keypad</code> module design. Why? The answer is that <strong>four-value register assignments are allowed in simulation, but are not synthesizeable.</strong> In the <code class="sourceCode verilog">keypad</code> module, we <em>could have used</em> <code class="sourceCode verilog">Z</code> assignments within the state machine in the <code class="sourceCode verilog"><span class="kw">always</span></code> block, and it <em>may have simulated correctly</em>, but <strong>in the end the implemented design would not work properly on the Basys3 board</strong>, all without any clear error messages.</p>
+<h3 id="simulate-the-design">Simulate the Design</h3>
+<p>Once you have completed the <code class="sourceCode verilog">clock_divider</code> and <code class="sourceCode verilog">keypad</code> modules, and understand the <code class="sourceCode verilog">testbench</code> design, run <code class="sourceCode verilog">make</code> to compile and simulate your design. In the file <code class="sourceCode verilog">results.txt</code>, you should see an output like this:</p>
+<pre class="text"><code>clk:       300002       col: zzz0       row: 1111       keys: 0000000000000000
+clk:       600003       col: zz0z       row: 1111       keys: 0000000000000000
+clk:       900004       col: z0zz       row: 1111       keys: 0000000000000000
+clk:      1200005       col: 0zzz       row: 1111       keys: 0000000000000000
+clk:      1500006       col: zzz0       row: 1110       keys: 0000000000000000
+clk:      1800007       col: zz0z       row: 1111       keys: 0000000000000010
+clk:      2100008       col: z0zz       row: 1111       keys: 0000000000000010
+clk:      2400009       col: 0zzz       row: 1111       keys: 0000000000000010
+clk:      2700010       col: zzz0       row: 1101       keys: 0000000000000010
+clk:      3000011       col: zz0z       row: 1111       keys: 0000000000010000
+clk:      3300012       col: z0zz       row: 1111       keys: 0000000000010000
+clk:      3600013       col: 0zzz       row: 1111       keys: 0000000000010000
+clk:      3900014       col: zzz0       row: 1011       keys: 0000000000010000
+clk:      4200015       col: zz0z       row: 1111       keys: 0000000010000000
+clk:      4500016       col: z0zz       row: 1111       keys: 0000000010000000
+clk:      4800017       col: 0zzz       row: 1111       keys: 0000000010000000
+clk:      5100018       col: zzz0       row: 0111       keys: 0000000010000000
+clk:      5400019       col: zz0z       row: 1111       keys: 0000000000000001
+clk:      5700020       col: z0zz       row: 1111       keys: 0000000000000001
+clk:      6000021       col: 0zzz       row: 1111       keys: 0000000000000001
+clk:      6300022       col: zzz0       row: 1111       keys: 0000000000000001
+clk:      6600023       col: zz0z       row: 1111       keys: 0000000000000000
+clk:      6900024       col: z0zz       row: 1111       keys: 0000000000000000
+clk:      7200025       col: 0zzz       row: 1111       keys: 0000000000000000
+clk:      7500026       col: zzz0       row: 1111       keys: 0000000000000000
+clk:      7800027       col: zz0z       row: 1110       keys: 0000000000000000</code></pre>
+<p>(The console output is more detailed and could be useful for debugging if your design has a problem). Each line of output represents one period of <code class="sourceCode verilog">scan</code>, and you can see the <code class="sourceCode verilog">col</code> signal rotate through each of the four columns. After every four lines, the <code class="sourceCode verilog">row</code> signal changes. In the output shown above, we see “no press” followed by keys 1, 4, 7, and 0, corresponding to the left-most column on the keypad.</p>
+<h2 id="synthesize-implement-and-program">Synthesize, Implement and Program</h2>
+<h3 id="create-a-top-module">Create a <code class="sourceCode verilog">top</code> Module</h3>
+<p>We’re going to use the Basys3 board’s <strong>center button</strong> as the <strong>reset</strong> for this design. Since the buttons are <strong>active-high</strong>, we need a top module to invert it and make an active-low reset signal. This type of interface layer is sometimes called a “wrapper” module, since it performs a minimal logic function.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb10-1"><a href="#cb10-1"></a><span class="kw">module</span> top</span>
+<span id="cb10-2"><a href="#cb10-2"></a>  (</span>
+<span id="cb10-3"><a href="#cb10-3"></a>   <span class="dt">input</span>         clk,</span>
+<span id="cb10-4"><a href="#cb10-4"></a>   <span class="dt">input</span>         rst,</span>
+<span id="cb10-5"><a href="#cb10-5"></a>   <span class="dt">input</span>  [<span class="dv">3</span>:<span class="dv">0</span>]  row,</span>
+<span id="cb10-6"><a href="#cb10-6"></a>   <span class="dt">output</span> [<span class="dv">3</span>:<span class="dv">0</span>]  col,</span>
+<span id="cb10-7"><a href="#cb10-7"></a>   <span class="dt">output</span> [<span class="dv">15</span>:<span class="dv">0</span>] keys</span>
+<span id="cb10-8"><a href="#cb10-8"></a>   );</span>
+<span id="cb10-9"><a href="#cb10-9"></a></span>
+<span id="cb10-10"><a href="#cb10-10"></a>   <span class="dt">wire</span>       rst_l;</span>
+<span id="cb10-11"><a href="#cb10-11"></a>   <span class="kw">assign</span> rst_l = ~rst;</span>
+<span id="cb10-12"><a href="#cb10-12"></a></span>
+<span id="cb10-13"><a href="#cb10-13"></a>   keypad #(.N(<span class="dv">300</span>_<span class="dv">000</span>)) kypd</span>
+<span id="cb10-14"><a href="#cb10-14"></a>     (</span>
+<span id="cb10-15"><a href="#cb10-15"></a>      .clk(clk),</span>
+<span id="cb10-16"><a href="#cb10-16"></a>      .rst_l(rst_l),</span>
+<span id="cb10-17"><a href="#cb10-17"></a>      .row(row),</span>
+<span id="cb10-18"><a href="#cb10-18"></a>      .col(col),</span>
+<span id="cb10-19"><a href="#cb10-19"></a>      .keys(keys)</span>
+<span id="cb10-20"><a href="#cb10-20"></a>      );</span>
+<span id="cb10-21"><a href="#cb10-21"></a>   </span>
+<span id="cb10-22"><a href="#cb10-22"></a></span>
+<span id="cb10-23"><a href="#cb10-23"></a><span class="kw">endmodule</span> <span class="co">// top</span></span></code></pre></div>
+<h3 id="inspect-the-keypad.xdc-file">Inspect the <code class="sourceCode verilog">keypad.xdc</code> File</h3>
+<p>The top-level I/O assignments are specified in the XDC file. Open it and observe the usual <code class="sourceCode verilog">clk</code> definition, and notice that the <code class="sourceCode verilog">keys</code> output vector is mapped to the 16 LEDs on the Basys3 board. The <code class="sourceCode verilog">rst</code> signal is mapped to the center button.</p>
+<p>To interface with the PMod hardware, the <code class="sourceCode verilog">row</code> and <code class="sourceCode verilog">col</code> signals are mapped to the <strong>JA Header</strong> located on the upper left of the board. To test the keypad interface, you need to plug the keypad into the JA header as shown:</p>
+<figure>
+<img src="figures/keypad_header_position.jpg" style="width:75.0%" alt="" /><figcaption>Header position for the keypad module.</figcaption>
+</figure>
+<h3 id="build-and-test">Build and Test</h3>
+<p>Run <code class="sourceCode verilog">make implement</code> to synthesize, place-and-route, and generate a bitstream. Program the bitstream onto your Basys3 board and verify that each key lights up the corresponding LED on the board.</p>
+<h2 id="turn-in-your-work">Turn in Your Work</h2>
+<h3 id="make-a-video">Make a Video</h3>
+<p>After verifying correct function, take a short video demonstrating keys 0 through F, and upload it in Canvas to indicate that you are done.</p>
+<h3 id="submit-design-files-in-using-git">Submit Design Files in Using <code class="sourceCode verilog">git</code></h3>
+<p>Turn in your work using <code class="sourceCode verilog">git</code>:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1"></a><span class="fu">git</span> add src/*.v *.v *.rpt *.txt *.bit </span>
+<span id="cb11-2"><a href="#cb11-2"></a><span class="fu">git</span> commit . -m <span class="st">&quot;Complete&quot;</span></span>
+<span id="cb11-3"><a href="#cb11-3"></a><span class="fu">git</span> push origin master</span></code></pre></div>
+</body>
+</html>

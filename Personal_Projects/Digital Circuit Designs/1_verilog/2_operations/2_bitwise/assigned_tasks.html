@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Bit-Wise Binary Operators</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="../../../3700.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Bit-Wise Binary Operators</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#bit-wise-operators-in-verilog"
+id="toc-bit-wise-operators-in-verilog">Bit-Wise Operators in
+Verilog</a></li>
+<li><a href="#assigned-tasks" id="toc-assigned-tasks">Assigned Tasks</a>
+<ul>
+<li><a href="#create-a-module" id="toc-create-a-module">Create a
+Module</a></li>
+<li><a href="#simulate-the-module" id="toc-simulate-the-module">Simulate
+the Module</a></li>
+<li><a href="#implement-the-module"
+id="toc-implement-the-module">Implement the Module</a></li>
+<li><a href="#program-the-module" id="toc-program-the-module">Program
+the Module</a></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="bit-wise-operators-in-verilog">Bit-Wise Operators in
+Verilog</h1>
+<p>Verilog supports several operations that work bit-by-bit across a
+pair of vectors. Given two vectors <code
+class="sourceCode verilog">a</code> and <code
+class="sourceCode verilog">b</code> with the <em>same bit width</em>, we
+have these operations:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Operator</th>
+<th>Operation</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code
+class="sourceCode verilog">a<span class="op">&amp;</span>b</code></td>
+<td>Bitwise AND</td>
+</tr>
+<tr class="even">
+<td><code
+class="sourceCode verilog">a<span class="op">|</span>b</code></td>
+<td>Bitwise OR</td>
+</tr>
+<tr class="odd">
+<td><code
+class="sourceCode verilog">a<span class="op">^</span>b</code></td>
+<td>Bitwise XOR</td>
+</tr>
+<tr class="even">
+<td><code
+class="sourceCode verilog"><span class="op">~(</span>a<span class="op">&amp;</span>b<span class="op">)</span></code></td>
+<td>Bitwise NAND</td>
+</tr>
+<tr class="odd">
+<td><code
+class="sourceCode verilog"><span class="op">~(</span>a<span class="op">|</span>b<span class="op">)</span></code></td>
+<td>Bitwise NOR</td>
+</tr>
+<tr class="even">
+<td><code
+class="sourceCode verilog"><span class="op">~(</span>a<span class="op">^</span>b<span class="op">)</span></code></td>
+<td>Bitwise XNOR</td>
+</tr>
+</tbody>
+</table>
+<p>A first example is given in <code
+class="sourceCode verilog">src<span class="op">/</span>testbench.v</code>.
+Open the file and study its contents. Run <code
+class="sourceCode verilog">make</code> to simulate the demo cases. The
+first few lines look like this:</p>
+<pre class="text"><code>clk:            0   a:  00000000    b:  00000000    a&amp;b: 00000000   a|b: 00000000   a^b: 00000000
+clk:            1   a:  00100100    b:  10000001    a&amp;b: 00000000   a|b: 10100101   a^b: 10100101
+clk:            2   a:  00001001    b:  01100011    a&amp;b: 00000001   a|b: 01101011   a^b: 01101010</code></pre>
+<p>Every bitwise operation returns a vector. For the last line, we have
+<code
+class="sourceCode verilog">a<span class="op">=</span><span class="dv">00001001</span></code>
+and <code
+class="sourceCode verilog">b<span class="op">=</span><span class="dv">01100011</span></code>,
+and they share a non-zero value only in the last bit position. Therefore
+the bitwise results are</p>
+<ul>
+<li><code
+class="sourceCode verilog">a<span class="op">&amp;</span>b<span class="op">={</span><span class="dv">0</span><span class="op">&amp;</span><span class="dv">0</span><span class="op">,</span><span class="dv">0</span><span class="op">&amp;</span><span class="dv">1</span><span class="op">,</span><span class="dv">0</span><span class="op">&amp;</span><span class="dv">1</span><span class="op">,</span><span class="dv">0</span><span class="op">&amp;</span><span class="dv">0</span><span class="op">,</span><span class="dv">1</span><span class="op">&amp;</span><span class="dv">0</span><span class="op">,</span><span class="dv">0</span><span class="op">&amp;</span><span class="dv">0</span><span class="op">,</span><span class="dv">0</span><span class="op">&amp;</span><span class="dv">1</span><span class="op">,</span><span class="dv">1</span><span class="op">&amp;</span><span class="dv">1</span><span class="op">}=</span><span class="dv">00000001</span></code>.<br />
+</li>
+<li><code
+class="sourceCode verilog">a<span class="op">|</span>b<span class="op">={</span><span class="dv">0</span><span class="op">|</span><span class="dv">0</span><span class="op">,</span><span class="dv">0</span><span class="op">|</span><span class="dv">1</span><span class="op">,</span><span class="dv">0</span><span class="op">|</span><span class="dv">1</span><span class="op">,</span><span class="dv">0</span><span class="op">|</span><span class="dv">0</span><span class="op">,</span><span class="dv">1</span><span class="op">|</span><span class="dv">0</span><span class="op">,</span><span class="dv">0</span><span class="op">|</span><span class="dv">0</span><span class="op">,</span><span class="dv">0</span><span class="op">|</span><span class="dv">1</span><span class="op">,</span><span class="dv">1</span><span class="op">|</span><span class="dv">1</span><span class="op">}=</span><span class="dv">01101011</span></code>.<br />
+</li>
+<li><code
+class="sourceCode verilog">a<span class="op">^</span>b<span class="op">={</span><span class="dv">0</span><span class="op">^</span><span class="dv">0</span><span class="op">,</span><span class="dv">0</span><span class="op">^</span><span class="dv">1</span><span class="op">,</span><span class="dv">0</span><span class="op">^</span><span class="dv">1</span><span class="op">,</span><span class="dv">0</span><span class="op">^</span><span class="dv">0</span><span class="op">,</span><span class="dv">1</span><span class="op">^</span><span class="dv">0</span><span class="op">,</span><span class="dv">0</span><span class="op">^</span><span class="dv">0</span><span class="op">,</span><span class="dv">0</span><span class="op">^</span><span class="dv">1</span><span class="op">,</span><span class="dv">1</span><span class="op">^</span><span class="dv">1</span><span class="op">}=</span><span class="dv">01101010</span></code>.</li>
+</ul>
+<p>As an <strong>exercise</strong>, predict the results for NAND, NOR,
+and XNOR operations. Modify <code
+class="sourceCode verilog">testbench.v</code> to test these operations,
+and run the simulation to verify your calculations.</p>
+<h1 id="assigned-tasks">Assigned Tasks</h1>
+<h2 id="create-a-module">Create a Module</h2>
+<p>Create file named <code
+class="sourceCode verilog">src<span class="op">/</span>bitwise_operations.v</code>
+and declare a module named <code
+class="sourceCode verilog">bitwise_operations</code>. The module should
+have these I/O ports:</p>
+<ul>
+<li>Input <code class="sourceCode verilog">clk</code></li>
+<li>Inputs <code class="sourceCode verilog">a</code> and <code
+class="sourceCode verilog">b</code> with <strong>seven bits
+each</strong></li>
+<li>Input <code class="sourceCode verilog">op</code> (short for
+“operation”) with <strong>two bits</strong></li>
+<li>Output <code
+class="sourceCode verilog"><span class="dt">reg</span></code> <code
+class="sourceCode verilog">q</code> with <strong>seven
+bits</strong></li>
+</ul>
+<p>In the module definition, make a <strong>clocked</strong> <code
+class="sourceCode verilog"><span class="kw">always</span></code>
+block:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">always</span> <span class="op">@(</span><span class="kw">posedge</span> clk<span class="op">)</span> <span class="kw">begin</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>   <span class="co">//...your code here...//</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code></pre></div>
+<p>In the always block, use <code
+class="sourceCode verilog"><span class="kw">if</span><span class="op">/</span><span class="kw">else</span></code>
+statements to implement these cases:</p>
+<ul>
+<li><code
+class="sourceCode verilog">op<span class="op">==</span><span class="dv">0</span></code>:
+<strong>Bitwise AND</strong> <code
+class="sourceCode verilog">q <span class="op">&lt;=</span> a<span class="op">&amp;</span>b</code></li>
+<li><code
+class="sourceCode verilog">op<span class="op">==</span><span class="dv">1</span></code>:
+<strong>Bitwise OR</strong> <code
+class="sourceCode verilog">q <span class="op">&lt;=</span> a<span class="op">|</span>b</code></li>
+<li><code
+class="sourceCode verilog">op<span class="op">==</span><span class="dv">2</span></code>:
+<strong>Bitwise XOR</strong> <code
+class="sourceCode verilog">q <span class="op">&lt;=</span> a<span class="op">^</span>b</code></li>
+<li><code
+class="sourceCode verilog">op<span class="op">==</span><span class="dv">3</span></code>:
+<strong>Bitwise NOR</strong> <code
+class="sourceCode verilog">q <span class="op">&lt;=~(</span>a<span class="op">|</span>b<span class="op">)</span></code></li>
+</ul>
+<h2 id="simulate-the-module">Simulate the Module</h2>
+<p>Next, in <code class="sourceCode verilog">testbench.v</code>, place
+an instance of the <code
+class="sourceCode verilog">bitwise_operations</code> module. Modify the
+<code class="sourceCode verilog">testbench</code> as follows:</p>
+<ul>
+<li>Declare two-bit <code
+class="sourceCode verilog"><span class="dt">reg</span></code> named
+<code class="sourceCode verilog">op</code>, initialized as 0.</li>
+<li>Declare seven-bit <code
+class="sourceCode verilog"><span class="dt">reg</span></code> signals
+<code class="sourceCode verilog">a</code> and <code
+class="sourceCode verilog">b</code>, initialized as 0.</li>
+<li>Declare seven-bit <code
+class="sourceCode verilog"><span class="dt">wire</span></code> signal
+<code class="sourceCode verilog">q</code></li>
+<li>Make a <strong>clocked</strong> <code
+class="sourceCode verilog"><span class="kw">always</span></code> block
+cycling through all values of <code
+class="sourceCode verilog">op</code>: 00,01,11,10,00,… and repeat</li>
+<li>Modify the <code
+class="sourceCode verilog"><span class="dt">$write</span></code> and
+<code class="sourceCode verilog"><span class="dt">$fwrite</span></code>
+lines to report the clock number, <code
+class="sourceCode verilog">a</code>, <code
+class="sourceCode verilog">b</code>, <code
+class="sourceCode verilog">op</code> and <code
+class="sourceCode verilog">q</code>. <strong>Optionally:</strong> use
+<code
+class="sourceCode verilog"><span class="kw">if</span><span class="op">/</span><span class="kw">else</span></code>
+conditions to report the operation name (“AND”, “OR”, etc) instead of
+the numerical value of <code class="sourceCode verilog">op</code>.</li>
+<li>Change the termination condition so that 20 cycles are
+simulated.</li>
+</ul>
+<p>When finished, run <code class="sourceCode verilog">make</code> to
+simulate your module. Carefully inspect the output and verify that the
+correct operations are performed for each case.</p>
+<h2 id="implement-the-module">Implement the Module</h2>
+<p>Now edit <code class="sourceCode verilog">build.tcl</code> and change
+the following:</p>
+<ul>
+<li><code class="sourceCode verilog">read_xdc</code> line: change to
+<code class="sourceCode verilog">bitwise_operations.xdc</code></li>
+<li><code class="sourceCode verilog">synth_design</code> line: change
+<code class="sourceCode verilog">top_module</code> to <code
+class="sourceCode verilog">bitwise_operations</code></li>
+<li><code class="sourceCode verilog">write_bitstream</code> line: change
+to <code class="sourceCode verilog">bitwise_operations.bit</code></li>
+</ul>
+<p>Next open <code
+class="sourceCode verilog">bitwise_operations.xdc</code>. You will see a
+lot of <strong>commented</strong> lines copied from <code
+class="sourceCode verilog">Basys3_Master.xdc</code>. First, note the
+<code class="sourceCode verilog">clk</code> lines:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>## Clock signal</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>#set_property PACKAGE_PIN W5 <span class="op">[</span>get_ports clk<span class="op">]</span>                            </span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    #set_property IOSTANDARD LVCMOS33 <span class="op">[</span>get_ports clk<span class="op">]</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    #create_clock <span class="op">-</span>add <span class="op">-</span>name sys_clk_pin <span class="op">-</span>period <span class="fl">10.00</span> <span class="op">-</span>waveform <span class="op">{</span><span class="dv">0</span> <span class="dv">5</span><span class="op">}</span> <span class="op">[</span>get_ports clk<span class="op">]</span></span></code></pre></div>
+<p>Since your design uses a clock, <strong>uncomment the lines</strong>
+that reference the <code class="sourceCode verilog">clk</code> port and
+start with <code class="sourceCode verilog">set_property</code> or <code
+class="sourceCode verilog">create_clock</code>. These properties are
+necessary for the following:</p>
+<ul>
+<li>Sets <code class="sourceCode verilog">PACKAGE_PIN</code> to indicate
+which FPGA pin is connected to the Basys3 clock signal</li>
+<li>Sets <code class="sourceCode verilog">IOSTANDARD</code> to <code
+class="sourceCode verilog">LVCMOS33</code>, 3.3V CMOS-compatible logic
+signals. Since the FPGA chip can support several different voltages and
+signal configurations, it needs to be told which standard is used on the
+Basys3 board.</li>
+<li>Declare that this pin is a <code
+class="sourceCode verilog">clock</code>, which is critical for proper
+routing and timing analysis.</li>
+</ul>
+<p>In the Basys3 XDC template, the first line pertaining to a given port
+is not indented, and subsequent lines pertaining to the same port are
+indented.</p>
+<p>Next, examine the <strong>switch</strong> lines. The first few look
+like this:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode verilog"><code class="sourceCode verilog"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>## Switches</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>#set_property PACKAGE_PIN V17 <span class="op">[</span>get_ports <span class="op">{</span>sw<span class="op">[</span><span class="dv">0</span><span class="op">]}]</span>                   </span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    #set_property IOSTANDARD LVCMOS33 <span class="op">[</span>get_ports <span class="op">{</span>sw<span class="op">[</span><span class="dv">0</span><span class="op">]}]</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>#set_property PACKAGE_PIN V16 <span class="op">[</span>get_ports <span class="op">{</span>sw<span class="op">[</span><span class="dv">1</span><span class="op">]}]</span>                   </span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    #set_property IOSTANDARD LVCMOS33 <span class="op">[</span>get_ports <span class="op">{</span>sw<span class="op">[</span><span class="dv">1</span><span class="op">]}]</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>#set_property PACKAGE_PIN W16 <span class="op">[</span>get_ports <span class="op">{</span>sw<span class="op">[</span><span class="dv">2</span><span class="op">]}]</span>                   </span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    #set_property IOSTANDARD LVCMOS33 <span class="op">[</span>get_ports <span class="op">{</span>sw<span class="op">[</span><span class="dv">2</span><span class="op">]}]</span></span></code></pre></div>
+<p>Uncomment all the <code
+class="sourceCode verilog">set_property</code> lines related to the
+switches. Next, edit each line replacing <code
+class="sourceCode verilog">sw<span class="op">[]</span></code> with a
+port name from your module. You should make the following
+substitutions:</p>
+<ul>
+<li>Map <code
+class="sourceCode verilog">sw<span class="op">[</span><span class="dv">0</span><span class="op">]</span></code>
+through <code
+class="sourceCode verilog">sw<span class="op">[</span><span class="dv">6</span><span class="op">]</span></code>
+to <code
+class="sourceCode verilog">a<span class="op">[</span><span class="dv">0</span><span class="op">]</span></code>
+through <code
+class="sourceCode verilog">a<span class="op">[</span><span class="dv">6</span><span class="op">]</span></code>
+(respectively)</li>
+<li>Map <code
+class="sourceCode verilog">sw<span class="op">[</span><span class="dv">7</span><span class="op">]</span></code>
+through <code
+class="sourceCode verilog">sw<span class="op">[</span><span class="dv">13</span><span class="op">]</span></code>
+to <code
+class="sourceCode verilog">b<span class="op">[</span><span class="dv">0</span><span class="op">]</span></code>
+through <code
+class="sourceCode verilog">b<span class="op">[</span><span class="dv">6</span><span class="op">]</span></code>
+(respectively)</li>
+<li>Map <code
+class="sourceCode verilog">sw<span class="op">[</span><span class="dv">14</span><span class="op">]</span></code>
+and <code
+class="sourceCode verilog">sw<span class="op">[</span><span class="dv">15</span><span class="op">]</span></code>
+to <code
+class="sourceCode verilog">op<span class="op">[</span><span class="dv">1</span><span class="op">]</span></code>
+and <code
+class="sourceCode verilog">op<span class="op">[</span><span class="dv">0</span><span class="op">]</span></code>
+(respectively)</li>
+</ul>
+<p>Next move down to the LEDs. Uncomment the <code
+class="sourceCode verilog">set_property</code> lines and change <code
+class="sourceCode verilog">led<span class="op">[</span><span class="dv">0</span><span class="op">]</span></code>
+through <code
+class="sourceCode verilog">led<span class="op">[</span><span class="dv">6</span><span class="op">]</span></code>
+to <code
+class="sourceCode verilog">q<span class="op">[</span><span class="dv">0</span><span class="op">]</span></code>
+through <code
+class="sourceCode verilog">q<span class="op">[</span><span class="dv">6</span><span class="op">]</span></code>,
+respectively.</p>
+<h2 id="program-the-module">Program the Module</h2>
+<p>When finished, run <code
+class="sourceCode verilog">make implement</code> to build the design.
+Program it onto the Basys3 board. When programmed, you should test the
+following:</p>
+<ul>
+<li>The two left-most switches control the operation</li>
+<li>The middle seven switches define <code
+class="sourceCode verilog">b</code></li>
+<li>The right-most seven switches define <code
+class="sourceCode verilog">a</code></li>
+</ul>
+<p>Demonstrate one working condition for each <code
+class="sourceCode verilog">op</code> value. Photograph it and place the
+photo in your working directory, with filenames <code
+class="sourceCode verilog">case1</code>, <code
+class="sourceCode verilog">case2</code>, and so on (with an appropriate
+graphics file extention).</p>
+<p>When finished, turn in your work using <code
+class="sourceCode verilog">git</code>:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> add src/<span class="pp">*</span> test_result.txt case<span class="pp">*</span> <span class="pp">*</span>.rpt <span class="pp">*</span>.bit</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> commit . <span class="at">-m</span> <span class="st">&quot;Complete.&quot;</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> push origin master</span></code></pre></div>
+<p>Then indicate on Canvas that your work is complete.</p>
+</body>
+</html>
